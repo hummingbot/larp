@@ -34,16 +34,32 @@ export class RaydiumController {
       disableLoadToken: true,
       blockhashCommitment: 'finalized',
     });
+    console.log("Raydium initialized");
   }
 
-  public async fetchPool([poolAddress], reply?: FastifyReply): Promise<void> {
+  public async fetchPool(poolAddress: string, reply: FastifyReply): Promise<void> {
     try {
-      const res = await this.raydium.liquidity.getRpcPoolInfos([poolAddress])
-      const poolInfo = res[poolAddress]
-      reply?.send({ poolInfo });
+      if (!this.raydium) {
+        throw new Error("Raydium not initialized");
+      }
+
+      console.log("Fetching pool info for address:", poolAddress);
+      const poolInfos = await this.raydium.liquidity.getRpcPoolInfos([poolAddress]);
+      console.log("Received poolInfos:", poolInfos);
+
+      const poolInfo = poolInfos[0];
+
+      if (!poolInfo) {
+        console.log("Pool not found for address:", poolAddress);
+        reply.status(404).send({ error: "Pool not found" });
+        return;
+      }
+
+      console.log("Pool info:", poolInfo);
+      reply.send({ poolInfo: JSON.parse(JSON.stringify(poolInfo)) });
     } catch (error) {
       console.error("Error fetching pool info:", error);
-      reply?.status(500).send("An error occurred while fetching pool info.");
+      reply.status(500).send({ error: "An error occurred while fetching pool info" });
     }
   }
 }
