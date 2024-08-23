@@ -7,20 +7,16 @@ import {
   PDAUtil, IGNORE_CACHE, WhirlpoolClient
 } from "@orca-so/whirlpools-sdk";
 import { TOKEN_PROGRAM_ID, unpackAccount } from "@solana/spl-token";
-import { validateSolanaNetwork } from '../../utils/validators';
+import { validateSolanaNetwork } from '../../utils/solana.validators';
 
 export class OrcaController {
   private ctx: WhirlpoolContext;
   private client: WhirlpoolClient;
 
   constructor() {
-    if (!process.env.PRIVATE_KEY) {
-      throw new Error('PRIVATE_KEY is not set in the environment variables');
-    }
-
-    const network = validateSolanaNetwork(process.env.NETWORK);
+    const network = validateSolanaNetwork(process.env.SOLANA_NETWORK);
     const connection = new Connection(clusterApiUrl(network));
-    const keypair = Keypair.fromSecretKey(bs58.decode(process.env.PRIVATE_KEY));
+    const keypair = Keypair.fromSecretKey(bs58.decode(process.env.SOLANA_PRIVATE_KEY));
     const wallet = new Wallet(keypair);
     const provider = new AnchorProvider(connection, wallet, {
       commitment: "processed",

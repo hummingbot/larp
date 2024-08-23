@@ -3,15 +3,15 @@ import { OrcaController } from './orca.controller';
 import path from 'path';
 
 const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  const PRIVATE_KEY = process.env.PRIVATE_KEY;
-  const NETWORK = process.env.NETWORK;
+  const SOLANA_PRIVATE_KEY = process.env.SOLANA_PRIVATE_KEY;
+  const SOLANA_NETWORK = process.env.SOLANA_NETWORK;
 
-  if (!PRIVATE_KEY) {
-    throw new Error('PRIVATE_KEY is not set in the environment variables');
+  if (!SOLANA_PRIVATE_KEY) {
+    throw new Error('SOLANA_PRIVATE_KEY is not set in the environment variables');
   }
 
-  if (!NETWORK) {
-    throw new Error('NETWORK is not set in the environment variables');
+  if (!SOLANA_NETWORK) {
+    throw new Error('SOLANA_NETWORK is not set in the environment variables');
   }
 
   const orcaController = new OrcaController();
