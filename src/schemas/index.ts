@@ -9,7 +9,9 @@ export const PoolInfoRequestSchema = {
 export const PoolInfoResponseSchema = {
   type: 'object',
   properties: {
-    poolPrice: { type: 'number' }
+    poolPrice: { type: 'number' },
+    baseTokenAddress: { type: 'string' },
+    quoteTokenAddress: { type: 'string' },
   },
-  required: ['poolPrice']
+  required: ['poolPrice', 'baseTokenAddress', 'quoteTokenAddress']
 };

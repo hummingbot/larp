@@ -40,14 +40,21 @@ export class RaydiumController extends SolanaController {
   
       const res = await this.raydium.liquidity.getRpcPoolInfos([poolAddress]);
       const poolInfo = res[poolAddress];
+      console.log("Pool info:", poolInfo);
   
       if (!poolInfo) {
         console.log("Pool not found for address:", poolAddress);
         reply.status(404).send({ error: "Pool not found" });
         return;
       }
+
+      const poolInfoResponse = {
+        poolPrice: poolInfo.poolPrice,
+        baseTokenAddress: poolInfo.baseMint.toString(),
+        quoteTokenAddress: poolInfo.quoteMint.toString(),
+      }
   
-      reply.send({ poolPrice: poolInfo.poolPrice });
+      reply.send(poolInfoResponse);
 
     } catch (error) {
       console.error("Error fetching pool info:", error);

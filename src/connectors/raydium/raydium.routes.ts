@@ -15,7 +15,6 @@ const raydiumRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       summary: 'Get pool info',
       description: 'Retrieve pool information from Raydium',
       params: PoolInfoRequestSchema,
-      example: 'hello',
       response: {
         200: PoolInfoResponseSchema
       }
