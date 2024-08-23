@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { OrcaController } from './orca.controller';
+import { RaydiumController } from './raydium.controller';
 import path from 'path';
 
-const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+const raydiumRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   const SOLANA_PRIVATE_KEY = process.env.SOLANA_PRIVATE_KEY;
   const SOLANA_NETWORK = process.env.SOLANA_NETWORK;
 
@@ -14,33 +14,41 @@ const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     throw new Error('SOLANA_NETWORK is not set in the environment variables');
   }
 
-  const orcaController = new OrcaController();
+  const raydiumController = new RaydiumController();
 
   // Get the folder name dynamically
   const folderName = path.basename(__dirname);
 
-  fastify.get(`/${folderName}/positions`, {
+  fastify.get(`/${folderName}/pool/:poolAddress`, {
     schema: {
       tags: [folderName],
-      summary: 'Get positions',
-      description: 'Retrieve positions from Orca',
+      summary: 'Get pool info',
+      description: 'Retrieve pool information from Raydium',
+      params: {
+        type: 'object',
+        properties: {
+          poolAddress: { type: 'string' }
+        },
+        required: ['poolAddress']
+      },
       response: {
         200: {
           description: 'Successful response',
           type: 'object',
           properties: {
-            positions: { type: 'array', items: { type: 'string' } },
+            poolInfo: { type: 'object' }
           }
         }
       }
     },
     handler: async (request, reply) => {
-      fastify.log.warn('Getting Orca positions');
-      return orcaController.getPositions(request, reply);
+      const { poolAddress } = request.params as { poolAddress: string };
+      fastify.log.warn(`Getting pool info for ${poolAddress}`);
+      await raydiumController.fetchPool([poolAddress], reply);
     }
   });
 
   // You can add more routes here for additional functionality
 };
 
-export default orcaRoutes;
+export default raydiumRoutes;

@@ -1,16 +1,18 @@
 import dotenv from 'dotenv';
 dotenv.config();
-
 import Fastify from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+
+// Import routes
 import orcaRoutes from './connectors/orca/orca.routes';
+import raydiumRoutes from './connectors/raydium/raydium.routes';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 const server = Fastify({
     logger: {
-      level: 'warn',
+      level: 'info',
       transport: {
         target: 'pino-pretty',
         options: {
@@ -51,6 +53,7 @@ server.register(fastifySwaggerUi, {
 
 // Register routes
 server.register(orcaRoutes);
+server.register(raydiumRoutes);
 
 const start = async (): Promise<void> => {
   try {

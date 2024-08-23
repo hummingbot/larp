@@ -7,6 +7,7 @@ import { validateSolanaNetwork } from '../../utils/solana.validators';
 
 const txVersion = TxVersion.V0 // or TxVersion.LEGACY
 const cluster = 'mainnet' as Cluster // 'mainnet' | 'devnet'
+const pool2 = '6UmmUiYoBjSrhakAobJw8BvkmJtDVxaeBtbt7rxWo1mg'
 
 export class RaydiumController {
   private connection: Connection;
@@ -35,17 +36,14 @@ export class RaydiumController {
     });
   }
 
-  public async getPositions(request?: FastifyRequest, reply?: FastifyReply): Promise<void> {
+  public async fetchPool([poolAddress], reply?: FastifyReply): Promise<void> {
     try {
-      // Fetch token accounts
-      const tokenAccounts = await this.connection.getTokenAccountsByOwner(
-        this.keypair.publicKey,
-        { programId: TOKEN_PROGRAM_ID }
-      );
-
-      // ... rest of the method
+      const res = await this.raydium.liquidity.getRpcPoolInfos([poolAddress])
+      const poolInfo = res[poolAddress]
+      reply?.send({ poolInfo });
     } catch (error) {
-      // ... error handling
+      console.error("Error fetching pool info:", error);
+      reply?.status(500).send("An error occurred while fetching pool info.");
     }
   }
 }
