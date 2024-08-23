@@ -2,6 +2,7 @@
   "dependencies": {
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
+    "@raydium-io/raydium-sdk-v2": "^0.1.64-alpha",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "pino-pretty": "^11.2.2"
