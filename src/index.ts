@@ -1,15 +1,23 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import Fastify from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
-import { OrcaController } from './connectors/orca/orca.controller';
 import orcaRoutes from './connectors/orca/orca.routes';
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 const server = Fastify({
     logger: {
       level: 'warn',
       transport: {
-        target: 'pino-pretty'
-      }
+        target: 'pino-pretty',
+        options: {
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname',
+        },
+      },
     }
 });
 
@@ -17,15 +25,15 @@ const server = Fastify({
 server.register(fastifySwagger, {
   swagger: {
     info: {
-      title: 'Orca LP API',
-      description: 'API for Orca liquidity providers',
-      version: '1.0.0'
+      title: 'larp',
+      description: 'API for on-chain liquidity providers',
+      version: '0.0.1'
     },
     externalDocs: {
       url: 'https://swagger.io',
       description: 'Find more info here'
     },
-    host: 'localhost:3000',
+    host: `localhost:${PORT}`,
     schemes: ['http'],
     consumes: ['application/json'],
     produces: ['application/json']
@@ -46,8 +54,8 @@ server.register(orcaRoutes);
 
 const start = async () => {
   try {
-    await server.listen({ port: 3000 });
-    console.log('Server listening on http://localhost:3000');
+    await server.listen({ port: PORT, host: '0.0.0.0' });
+    console.log(`Server listening on http://localhost:${PORT}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);

@@ -8,7 +8,10 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import { TOKEN_PROGRAM_ID, unpackAccount } from "@solana/spl-token";
 
-const PRIVATE_KEY = "5mHMAVoC4Hcbvdgif6VvzCcSnakyuq97ELDxYPgz2wSSm5W5UnDweBvFBsCXeEmLSiz51Gdwy5zkq923S4j6CHWu";
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+if (!PRIVATE_KEY) {
+  throw new Error('PRIVATE_KEY is not set in the environment variables');
+}
 
 export class OrcaController {
   public async getPositions(request?: FastifyRequest, reply?: FastifyReply): Promise<void> {
