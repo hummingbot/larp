@@ -6,10 +6,12 @@ const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
   fastify.get('/positions', {
     schema: {
-      description: 'Get positions',
       tags: ['orca'],
+      summary: 'Get positions',
+      description: 'Retrieve positions from Orca',
       response: {
         200: {
+          description: 'Successful response',
           type: 'object',
           properties: {
             positions: { type: 'array', items: { type: 'string' } },
