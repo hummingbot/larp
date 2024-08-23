@@ -1,41 +1,47 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { Keypair, Connection, clusterApiUrl, PublicKey } from '@solana/web3.js';
-import bs58 from 'bs58';
+import { PublicKey } from '@solana/web3.js';
 import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
 import {
   WhirlpoolContext, buildWhirlpoolClient, ORCA_WHIRLPOOL_PROGRAM_ID,
   PDAUtil, IGNORE_CACHE, WhirlpoolClient
 } from "@orca-so/whirlpools-sdk";
 import { TOKEN_PROGRAM_ID, unpackAccount } from "@solana/spl-token";
-import { validateSolanaNetwork } from '../../utils/solana.validators';
+import { SolanaController } from '../solana/solana.controller';
 
-export class OrcaController {
+export class OrcaController extends SolanaController {
   private ctx: WhirlpoolContext;
   private client: WhirlpoolClient;
 
   constructor() {
-    const network = validateSolanaNetwork(process.env.SOLANA_NETWORK);
-    const connection = new Connection(clusterApiUrl(network));
-    const keypair = Keypair.fromSecretKey(bs58.decode(process.env.SOLANA_PRIVATE_KEY));
-    const wallet = new Wallet(keypair);
-    const provider = new AnchorProvider(connection, wallet, {
+    super();
+    const wallet = new Wallet(this.keypair);
+    const provider = new AnchorProvider(this.connection, wallet, {
       commitment: "processed",
     });
 
     this.ctx = WhirlpoolContext.withProvider(provider, ORCA_WHIRLPOOL_PROGRAM_ID);
+    this.initializeClient();
   }
 
   private async initializeClient(): Promise<void> {
-    if (!this.client) {
-      this.client = await buildWhirlpoolClient(this.ctx);
+    try {
+      if (!this.client) {
+        this.client = await buildWhirlpoolClient(this.ctx);
+      }
+      console.log("Orca initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize Orca:", error);
+      throw error;
     }
   }
 
-  async getPositions(request: FastifyRequest, reply: FastifyReply) {
-    const { address } = request.params as { address: string };
+  public async getPositions(request: FastifyRequest, reply: FastifyReply) {
     try {
       await this.initializeClient();
+
+      const { address } = request.params as { address: string };
       const publicKey = new PublicKey(address);
+      console.log("Fetching Orca positions owned by address:", address);
 
       // Get all token accounts
       const tokenAccounts = (await this.ctx.connection.getTokenAccountsByOwner(publicKey, { programId: TOKEN_PROGRAM_ID })).value;
