@@ -1,4 +1,15 @@
 {
+  "name": "larp",
+  "version": "0.0.1",
+  "description": "minimal middleware for on-chain liquidity providers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "fengtality",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fengtality/larp.git"
+  },
   "dependencies": {
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
