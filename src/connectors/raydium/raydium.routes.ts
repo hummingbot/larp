@@ -43,8 +43,9 @@ const raydiumRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
     },
     handler: async (request, reply) => {
       const { poolAddress } = request.params as { poolAddress: string };
-      fastify.log.warn(`Getting pool info for ${poolAddress}`);
-      await raydiumController.fetchPool(poolAddress, reply);
+      fastify.log.info(`Getting pool info for ${poolAddress}`);
+      await raydiumController.fetchPool(request, reply);
+      fastify.log.info(`Response sent for pool ${poolAddress}.`);
     }
   });
 

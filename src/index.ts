@@ -55,6 +55,12 @@ server.register(fastifySwaggerUi, {
 server.register(orcaRoutes);
 server.register(raydiumRoutes);
 
+// Error handler
+server.setErrorHandler((error, request, reply) => {
+  server.log.error(error);
+  reply.status(500).send({ error: "An unexpected error occurred" });
+});
+
 const start = async (): Promise<void> => {
   try {
     await server.listen({ port: PORT, host: '0.0.0.0' });

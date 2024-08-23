@@ -19,11 +19,18 @@ const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Get the folder name dynamically
   const folderName = path.basename(__dirname);
 
-  fastify.get(`/${folderName}/positions`, {
+  fastify.get(`/${folderName}/positions/:address`, {
     schema: {
       tags: [folderName],
-      summary: 'Get positions',
-      description: 'Retrieve positions from Orca',
+      summary: 'Get positions for a specific address',
+      description: 'Retrieve positions from Orca for a given address',
+      params: {
+        type: 'object',
+        required: ['address'],
+        properties: {
+          address: { type: 'string' }
+        }
+      },
       response: {
         200: {
           description: 'Successful response',
@@ -35,7 +42,8 @@ const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       }
     },
     handler: async (request, reply) => {
-      fastify.log.warn('Getting Orca positions');
+      const { address } = request.params as { address: string };
+      fastify.log.info(`Getting Orca positions for address: ${address}`);
       return orcaController.getPositions(request, reply);
     }
   });
