@@ -52,10 +52,10 @@ server.register(fastifySwaggerUi, {
 // Register routes
 server.register(orcaRoutes);
 
-const start = async () => {
+const start = async (): Promise<void> => {
   try {
     await server.listen({ port: PORT, host: '0.0.0.0' });
-    console.log(`Server listening on http://localhost:${PORT}`);
+    server.log.info(`Server listening on http://localhost:${PORT}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);

@@ -12,14 +12,25 @@
     "@solana/spl-token": "^0.4.8",
     "@solana/web3.js": "^1.95.3",
     "@types/node": "^22.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "@typescript-eslint/parser": "^8.2.0",
     "bs58": "^6.0.0",
+    "eslint": "^9.9.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.9.0",
     "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.2.0"
   },
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/index.ts",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.ts\""
   }
 }
