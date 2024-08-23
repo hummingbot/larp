@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "@fastify/swagger": "^8.15.0",
+    "@fastify/swagger-ui": "^4.1.0",
+    "fastify": "^4.28.1",
+    "pino-pretty": "^11.2.2"
+  },
+  "devDependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@orca-so/whirlpools-sdk": "^0.13.5",
+    "@solana/spl-token": "^0.4.8",
+    "@solana/web3.js": "^1.95.3",
+    "@types/node": "^22.5.0",
+    "bs58": "^6.0.0",
+    "nodemon": "^3.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
+  }
+}
