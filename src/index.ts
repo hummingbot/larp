@@ -51,6 +51,12 @@ server.register(fastifySwaggerUi, {
   staticCSP: true
 });
 
+// Add the onSend hook globally
+server.addHook('onSend', async (request, reply, payload) => {
+  console.log('Response payload:', payload);
+  return payload;
+});
+
 // Register routes
 server.register(orcaRoutes);
 server.register(raydiumRoutes);

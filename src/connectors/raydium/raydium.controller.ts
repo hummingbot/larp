@@ -68,11 +68,25 @@ export class RaydiumController {
       }
   
       const formattedPoolInfo = {
-        poolPrice: poolInfo.poolPrice.toString(),
+        poolPrice: poolInfo.poolPrice ? poolInfo.poolPrice.toString() : null,
       };
-      
       console.log("Formatted pool info:", formattedPoolInfo);
-      reply.send(formattedPoolInfo);
+
+      // Log the raw reply object
+      // console.log("Raw reply object before sending:", reply.raw);
+
+      // Log the reply object itself
+      // console.log("Reply object before sending:", reply);
+
+      // Set Content-Type header explicitly
+      reply.header('Content-Type', 'application/json');
+
+
+      reply.send({ poolInfo: formattedPoolInfo });
+
+      // Log after sending the reply
+      console.log("Reply sent with pool info:", formattedPoolInfo);
+
     } catch (error) {
       console.error("Error fetching pool info:", error);
       reply.status(500).send({ error: "An error occurred while fetching pool info" });

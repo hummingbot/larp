@@ -36,7 +36,12 @@ const raydiumRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           description: 'Successful response',
           type: 'object',
           properties: {
-            poolInfo: { type: 'object' }
+            poolInfo: { 
+              type: 'object',
+              properties: {
+                poolPrice: { type: 'number' }
+              }
+            }
           }
         }
       }
