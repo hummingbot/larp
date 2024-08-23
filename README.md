@@ -2,6 +2,8 @@
 
 *minimal middleware for on-chain liquidity providers*
 
+This library standardizes common actions from Automated Market Makers (AMMs) and other DeFi protocols into REST endpoints. It allows market makers and other algorithmic participants to access different DeFi protocols through a single entry point.
+
 ## Install
 
 1. Clone the repository:
@@ -18,9 +20,9 @@
 3. Set up environment variables:
    Modify the `env.template` file in the root directory and rename it as `.env`:
    ```
-   SOLANA_PRIVATE_KEY=<your-solana-private-key>
-   SOLANA_NETWORK=mainnet-beta
    PORT=3000
+   SOLANA_NETWORK=mainnet-beta
+   SOLANA_PRIVATE_KEY=<your-solana-wallet-private-key>
    ```
 
 ## Run
@@ -37,7 +39,7 @@
 
 2. View docs at:
    ```
-   http://localhost:<port>/documentation
+   http://localhost:3000/docs
    ```
 
    This will display the Swagger UI with detailed information about all available routes.
