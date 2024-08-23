@@ -21,3 +21,6 @@ build/
 
 # ESLint cache
 .eslintcache
+
+# pnpm lock file
+pnpm-lock.yaml
