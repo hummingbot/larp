@@ -13,7 +13,9 @@
   "dependencies": {
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
+    "@fastify/type-provider-typebox": "^4.1.0",
     "@raydium-io/raydium-sdk-v2": "^0.1.64-alpha",
+    "@sinclair/typebox": "^0.33.7",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "fastify-type-provider-zod": "^2.0.0",

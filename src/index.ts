@@ -3,10 +3,12 @@ dotenv.config();
 import Fastify from 'fastify';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+import { Type } from '@sinclair/typebox';
 
 // Import routes
-import orcaRoutes from './connectors/orca/orca.routes';
-import raydiumRoutes from './connectors/raydium/raydium.routes';
+import orcaRoutes from './connectors/orca';
+import raydiumRoutes from './connectors/raydium';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
@@ -24,32 +26,40 @@ const server = Fastify({
 });
 
 // Register Swagger
+server.withTypeProvider<TypeBoxTypeProvider>()
+
 server.register(fastifySwagger, {
-  swagger: {
+  openapi: {
     info: {
       title: 'larp',
-      description: 'API for on-chain liquidity providers',
+      description: 'minimal middleware for on-chain liquidity providers',
       version: '0.0.1'
     },
-    externalDocs: {
-      url: 'https://swagger.io',
-      description: 'Find more info here'
-    },
-    host: `localhost:${PORT}`,
-    schemes: ['http'],
-    consumes: ['application/json'],
-    produces: ['application/json']
+    servers: [{
+      url: `http://localhost:${PORT}`
+    }],
+    tags: [
+      { name: 'orca', description: 'Orca (orca.so) is an AMM DEX on Solana' },
+      { name: 'raydium', description: 'Raydium (raydium.io) is an AMM DEX on Solana' }
+      // Add more tags for other connectors as needed
+    ]
+  },
+  transform: ({ schema, url }) => {
+    return {
+      schema: Type.Strict(schema as any),
+      url: url
+    }
   }
-});
+})
 
 server.register(fastifySwaggerUi, {
   routePrefix: '/docs',
   uiConfig: {
-    docExpansion: 'full',
+    docExpansion: 'list', // This makes tags collapsible
     deepLinking: false
   },
   staticCSP: true
-});
+})
 
 // Add the onSend hook globally
 server.addHook('onSend', async (request, reply, payload) => {

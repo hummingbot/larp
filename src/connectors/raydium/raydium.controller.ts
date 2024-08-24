@@ -1,10 +1,9 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { Raydium, TxVersion, parseTokenAccountResp, Cluster } from '@raydium-io/raydium-sdk-v2';
 import { SolanaController } from '../solana/solana.controller';
+import { Raydium, Cluster } from '@raydium-io/raydium-sdk-v2';
 
 export class RaydiumController extends SolanaController {
-  private cluster: Cluster;
-  private raydium: Raydium | undefined;
+  protected cluster: Cluster;
+  protected raydium: Raydium | undefined;
 
   constructor() {
     super();
@@ -12,7 +11,7 @@ export class RaydiumController extends SolanaController {
     this.initializeClient();  
   }
 
-  private async initializeClient(): Promise<void> {
+  protected async initializeClient(): Promise<void> {
     try {
       if (!this.raydium) {
         this.raydium = await Raydium.load({
@@ -30,36 +29,4 @@ export class RaydiumController extends SolanaController {
       throw error;
     }
   }
-
-  public async fetchPool(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      await this.initializeClient();
-  
-      const { poolAddress } = request.params as { poolAddress: string };
-      console.log("Fetching Raydium pool for address:", poolAddress);
-  
-      const res = await this.raydium.liquidity.getRpcPoolInfos([poolAddress]);
-      const poolInfo = res[poolAddress];
-      console.log("Pool info:", poolInfo);
-  
-      if (!poolInfo) {
-        console.log("Pool not found for address:", poolAddress);
-        reply.status(404).send({ error: "Pool not found" });
-        return;
-      }
-
-      const poolInfoResponse = {
-        poolPrice: poolInfo.poolPrice,
-        baseTokenAddress: poolInfo.baseMint.toString(),
-        quoteTokenAddress: poolInfo.quoteMint.toString(),
-      }
-  
-      reply.send(poolInfoResponse);
-
-    } catch (error) {
-      console.error("Error fetching pool info:", error);
-      reply.status(500).send({ error: "An error occurred while fetching pool info" });
-    }
-  }
-
 }

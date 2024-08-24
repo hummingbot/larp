@@ -14,9 +14,15 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^4.1.0
         version: 4.1.0
+      '@fastify/type-provider-typebox':
+        specifier: ^4.1.0
+        version: 4.1.0(@sinclair/typebox@0.33.7)
       '@raydium-io/raydium-sdk-v2':
         specifier: ^0.1.64-alpha
         version: 0.1.64-alpha(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.5.4)(utf-8-validate@5.0.10)
+      '@sinclair/typebox':
+        specifier: ^0.33.7
+        version: 0.33.7
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5
@@ -159,6 +165,11 @@ packages:
   '@fastify/swagger@8.15.0':
     resolution: {integrity: sha512-zy+HEEKFqPMS2sFUsQU5X0MHplhKJvWeohBwTCkBAJA/GDYGLGUWQaETEhptiqxK7Hs0fQB9B4MDb3pbwIiCwA==}
 
+  '@fastify/type-provider-typebox@4.1.0':
+    resolution: {integrity: sha512-mXNBaBEoS6Yf4/O2ujNhu9yEZwvBC7niqRESsiftE9NP1hV6ZdV3ZsFbPf1S520BK3rTZ0F28zr+sMdIXNJlfw==}
+    peerDependencies:
+      '@sinclair/typebox': '>=0.26 <=0.33'
+
   '@humanwhocodes/module-importer@1.0.1':
     resolution: {integrity: sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA==}
     engines: {node: '>=12.22'}
@@ -244,6 +255,9 @@ packages:
 
   '@raydium-io/raydium-sdk-v2@0.1.64-alpha':
     resolution: {integrity: sha512-aVPAks7C7vlZMVQnc/4yrynGFKg2AMIvCHByB8u6R6Jzrdp3zXd1sPIf+WVcojWBRRGjCGUHFB5JZUWD+9BKQw==}
+
+  '@sinclair/typebox@0.33.7':
+    resolution: {integrity: sha512-et38XPs6GMoB6XugH+Spp/HRv5gHYffw7rXC3caen/dIKC7Q6sqs6eEH9Yd9UKziUkOQdrLr9OXUULAc+pRMng==}
 
   '@solana/buffer-layout-utils@0.2.0':
     resolution: {integrity: sha512-szG4sxgJGktbuZYDg2FfNmkMi0DYQoVjN2h7ta1W1hPrwzarcFLBq9UpX1UjNXsNpT9dn+chgprtWGioUAr4/g==}
@@ -1734,6 +1748,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@fastify/type-provider-typebox@4.1.0(@sinclair/typebox@0.33.7)':
+    dependencies:
+      '@sinclair/typebox': 0.33.7
+
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.3.0': {}
@@ -1857,6 +1875,8 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
       - utf-8-validate
+
+  '@sinclair/typebox@0.33.7': {}
 
   '@solana/buffer-layout-utils@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
