@@ -42,6 +42,7 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node src/index.ts",
+    "start:prod": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

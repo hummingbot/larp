@@ -15,3 +15,20 @@ export const PoolInfoResponseSchema = {
   },
   required: ['poolPrice', 'baseTokenAddress', 'quoteTokenAddress']
 };
+
+// New schemas for Orca
+export const PositionsRequestSchema = {
+  type: 'object',
+  properties: {
+    ownerAddress: { type: 'string' }
+  },
+  required: ['ownerAddress']
+};
+
+export const PositionsResponseSchema = {
+  type: 'object',
+  properties: {
+    positions: { type: 'array', items: { type: 'string' } }
+  },
+  required: ['positions']
+};

@@ -14,7 +14,7 @@ This library standardizes common actions from Automated Market Makers (AMMs) and
 
 2. Install dependencies:
    ```
-   npm install
+   pnpm install
    ```
 
 3. Set up environment variables:
@@ -29,7 +29,7 @@ This library standardizes common actions from Automated Market Makers (AMMs) and
 
 1. Start the server:
    ```
-   npm start
+   pnpm start
    ```
 
 2. Use your browser or curl to send requests to the endpoints. For example:

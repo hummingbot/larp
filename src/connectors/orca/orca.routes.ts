@@ -1,19 +1,9 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { OrcaController } from './orca.controller';
+import { PositionsRequestSchema, PositionsResponseSchema } from '../../schemas';
 import path from 'path';
 
 const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  const SOLANA_PRIVATE_KEY = process.env.SOLANA_PRIVATE_KEY;
-  const SOLANA_NETWORK = process.env.SOLANA_NETWORK;
-
-  if (!SOLANA_PRIVATE_KEY) {
-    throw new Error('SOLANA_PRIVATE_KEY is not set in the environment variables');
-  }
-
-  if (!SOLANA_NETWORK) {
-    throw new Error('SOLANA_NETWORK is not set in the environment variables');
-  }
-
   const orcaController = new OrcaController();
 
   // Get the folder name dynamically
@@ -24,21 +14,9 @@ const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       tags: [folderName],
       summary: 'Get positions for a specific address',
       description: 'Retrieve positions from Orca for a given address',
-      params: {
-        type: 'object',
-        required: ['address'],
-        properties: {
-          address: { type: 'string' }
-        }
-      },
+      params: PositionsRequestSchema,
       response: {
-        200: {
-          description: 'Successful response',
-          type: 'object',
-          properties: {
-            positions: { type: 'array', items: { type: 'string' } },
-          }
-        }
+        200: PositionsResponseSchema,
       }
     },
     handler: async (request, reply) => {
