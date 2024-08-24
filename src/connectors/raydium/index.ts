@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
-import getPoolInfoRoute from './routes/getPoolInfo';
+import getPoolInfoRoute from './amm-routes/getPoolInfo';
 
 export const raydiumRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Get the folder name dynamically

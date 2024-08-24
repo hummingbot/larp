@@ -17,12 +17,17 @@ This library standardizes common actions from Automated Market Makers (AMMs) and
    pnpm install
    ```
 
-3. Set up environment variables:
-   Modify the `env.template` file in the root directory and rename it as `.env`:
+3. Generate the wallet JSON file from a Solana private key
+   ```
+   pnpm create-wallet
+   ```
+
+4. Set up environment variables:
+   Check the `env.example` file in the root directory and rename it as `.env`:
    ```
    PORT=3000
    SOLANA_NETWORK=mainnet-beta
-   SOLANA_PRIVATE_KEY=<your-solana-wallet-private-key>
+   SOLANA_WALLET_JSON=wallet.json
    ```
 
 ## Run

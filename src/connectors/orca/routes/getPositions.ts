@@ -41,7 +41,7 @@ export default function getPositionsRoute(fastify: FastifyInstance, folderName: 
   fastify.get(`/${folderName}/positions/:address`, {
     schema: {
       tags: [folderName],
-      description: 'Retrieve positions from Orca for a given address',
+      description: 'Retrieve Orca positions owned by an address',
       params: Type.Object({
         address: Type.String()
       }),

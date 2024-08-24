@@ -10,6 +10,9 @@ export class OrcaController extends SolanaController {
 
   constructor() {
     super();
+    if (!this.keypair) {
+      throw new Error('Keypair not loaded. SOLANA_PRIVATE_KEY may not be set.');
+    }
     const wallet = new Wallet(this.keypair);
     const provider = new AnchorProvider(this.connection, wallet, {
       commitment: "processed",

@@ -21,3 +21,6 @@ build/
 
 # ESLint cache
 .eslintcache
+
+# Wallet JSON
+**/wallet*.json

@@ -81,7 +81,7 @@ class AddLiquidityController extends OrcaController {
 export default function addLiquidityRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new AddLiquidityController();
 
-  fastify.post(`/${folderName}/addLiquidity`, {
+  fastify.post(`/${folderName}/add-liquidity`, {
     schema: {
       tags: [folderName],
       description: 'Add liquidity to an Orca position',

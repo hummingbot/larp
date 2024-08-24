@@ -28,10 +28,10 @@ class GetPoolInfoController extends RaydiumController {
 export default function getPoolInfoRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new GetPoolInfoController();
 
-  fastify.get(`/${folderName}/amm-pool/:poolAddress`, {
+  fastify.get(`/${folderName}/amm/pool/:poolAddress`, {
     schema: {
       tags: [folderName],
-      description: 'Retrieve pool information from Raydium',
+      description: 'Get info on a Raydium pool',
       params: Type.Object({
         poolAddress: Type.String()
       }),

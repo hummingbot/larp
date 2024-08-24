@@ -7,6 +7,7 @@ import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
 import { Type } from '@sinclair/typebox';
 
 // Import routes
+import solanaRoutes from './connectors/solana';
 import orcaRoutes from './connectors/orca';
 import raydiumRoutes from './connectors/raydium';
 
@@ -39,8 +40,9 @@ server.register(fastifySwagger, {
       url: `http://localhost:${PORT}`
     }],
     tags: [
-      { name: 'orca', description: 'Orca (orca.so) is an AMM DEX on Solana' },
-      { name: 'raydium', description: 'Raydium (raydium.io) is an AMM DEX on Solana' }
+      { name: 'solana', description: 'Solana utility endpoints' },
+      { name: 'orca', description: 'Orca LP endpoints' },
+      { name: 'raydium', description: 'Raydium LP endpoints' }
       // Add more tags for other connectors as needed
     ]
   },
@@ -68,6 +70,7 @@ server.addHook('onSend', async (request, reply, payload) => {
 });
 
 // Register routes
+server.register(solanaRoutes);
 server.register(orcaRoutes);
 server.register(raydiumRoutes);
 
