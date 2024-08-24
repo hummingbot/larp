@@ -13,8 +13,17 @@ This library standardizes common actions from Automated Market Makers (AMMs) and
    ```
 
 2. Install dependencies:
+   If you have `pnpm` installed:
    ```
    pnpm install
+   ```
+   If you don't have `pnpm`, you can install it globally first:
+   ```
+   npm install -g pnpm
+   ```
+   Or use npm directly:
+   ```
+   npm install
    ```
 
 3. Generate the wallet JSON file from a Solana private key
@@ -37,23 +46,27 @@ This library standardizes common actions from Automated Market Makers (AMMs) and
    pnpm start
    ```
 
-2. Use your browser or curl to send requests to the endpoints. For example:
-   ```
-   curl http://localhost:3000/raydium/pool/<pool-address>
-   ```
-
-2. View docs at:
+2. View the docs with detailed information about all available routes at:
    ```
    http://localhost:3000/docs
    ```
 
-   This will display the Swagger UI with detailed information about all available routes.
-
-
 ## Contribute
 
-[Add information about how to contribute to the project]
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a new branch for your feature or bug fix
+3. Make your changes and commit them with clear, descriptive messages
+4. Push your changes to your fork
+5. Submit a pull request with a detailed description of your changes
+
+For bug reports or feature requests, please open an issue with a clear title and description.
 
 ## License
 
-[Add your license information here]
+This project is licensed under the MIT License.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software
