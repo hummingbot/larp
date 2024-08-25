@@ -8,7 +8,7 @@ class GetPoolInfoController extends RaydiumController {
     baseTokenAddress: string;
     quoteTokenAddress: string;
   }> {
-    await this.initializeClient();
+    await this.loadRaydium();
 
     const res = await this.raydium.liquidity.getRpcPoolInfos([poolAddress]);
     const poolInfo = res[poolAddress];

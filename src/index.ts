@@ -12,6 +12,7 @@ import orcaRoutes from './connectors/orca';
 import raydiumRoutes from './connectors/raydium';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const SOLANA_NETWORK = process.env.SOLANA_NETWORK || 'mainnet-beta';
 
 const server = Fastify({
     logger: {
@@ -63,27 +64,16 @@ server.register(fastifySwaggerUi, {
   staticCSP: true
 })
 
-// Add the onSend hook globally
-server.addHook('onSend', async (request, reply, payload) => {
-  console.log('Response payload:', payload);
-  return payload;
-});
-
 // Register routes
 server.register(solanaRoutes);
 server.register(orcaRoutes);
 server.register(raydiumRoutes);
 
-// Error handler
-server.setErrorHandler((error, request, reply) => {
-  server.log.error(error);
-  reply.status(500).send({ error: "An unexpected error occurred" });
-});
-
 const start = async (): Promise<void> => {
   try {
     await server.listen({ port: PORT, host: '0.0.0.0' });
     server.log.info(`Server listening on http://localhost:${PORT}`);
+    server.log.info(`Solana network: ${SOLANA_NETWORK}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);

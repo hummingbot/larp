@@ -36,9 +36,6 @@ export class SolanaController {
   }
 
   public getWallet(): { publicKey: string; network: string } {
-    if (!this.keypair) {
-      throw new Error('Keypair not loaded. SOLANA_PRIVATE_KEY may not be set.');
-    }
     return {
       publicKey: this.keypair.publicKey.toBase58(),
       network: this.network,

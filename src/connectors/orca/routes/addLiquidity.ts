@@ -7,53 +7,53 @@ import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 
 class AddLiquidityController extends OrcaController {
-  async addLiquidity(positionAddress: string): Promise<{ signature: string }> {
-    await this.initializeClient();
+  async addLiquidity(
+    positionAddress: string,
+    quoteTokenAmount: number,
+    slippagePct?: number
+  ): Promise<{ signature: string }> {
+    await this.loadOrca();
 
-    // Token definition
-    // devToken specification
-    // https://everlastingsong.github.io/nebula/
-    const devUSDC = {mint: new PublicKey("BRjpCHtyQLNCo8gqRUr8jtdAj5AjPYQaoqbvcZiHok1k"), decimals: 6};
-    const devSAMO = {mint: new PublicKey("Jd4M8bfJG3sAkd82RsGWyEXoaBXQP7njFzBwEaCTuDa"), decimals: 9};
-
-    // Retrieve the position address from the WHIRLPOOL_POSITION environment variable
-    const position_address = process.env.WHIRLPOOL_POSITION;
-    const position_pubkey = new PublicKey(position_address);
+    const position_pubkey = new PublicKey(positionAddress);
     console.log("position address:", position_pubkey.toBase58());
 
     // Get the position and the pool to which the position belongs
     const position = await this.client.getPosition(position_pubkey);
     const whirlpool = await this.client.getPool(position.getData().whirlpool);
 
-    // Set amount of tokens to deposit and acceptable slippage
-    const dev_usdc_amount = DecimalUtil.toBN(new Decimal("1" /* devUSDC */), devUSDC.decimals);
-    const slippage = Percentage.fromFraction(10, 1000); // 1%
+    // Get token info
+    const token_a = whirlpool.getTokenAInfo();
+    const token_b = whirlpool.getTokenBInfo();
+
+    // Convert quoteTokenAmount to Decimal
+    const quote_token_amount = DecimalUtil.toBN(new Decimal(quoteTokenAmount.toString()), token_b.decimals);
+    const slippage = slippagePct
+      ? Percentage.fromFraction(slippagePct * 100, 10000)
+      : Percentage.fromFraction(1, 100); // Default 1% slippage
 
     // Obtain deposit estimation
     const whirlpool_data = whirlpool.getData();
-    const token_a = whirlpool.getTokenAInfo();
-    const token_b = whirlpool.getTokenBInfo();
     const quote = increaseLiquidityQuoteByInputTokenWithParams({
-        // Pass the pool definition and state
-        tokenMintA: token_a.mint,
-        tokenMintB: token_b.mint,
-        sqrtPrice: whirlpool_data.sqrtPrice,
-        tickCurrentIndex: whirlpool_data.tickCurrentIndex,
-        // Pass the price range of the position as is
-        tickLowerIndex: position.getData().tickLowerIndex,
-        tickUpperIndex: position.getData().tickUpperIndex,
-        // Input token and amount
-        inputTokenMint: devUSDC.mint,
-        inputTokenAmount: dev_usdc_amount,
-        // Acceptable slippage
-        slippageTolerance: slippage,
-        // Get token info for TokenExtensions
-        tokenExtensionCtx: await TokenExtensionUtil.buildTokenExtensionContext(this.ctx.fetcher, whirlpool_data),
+      // Pass the pool definition and state
+      tokenMintA: token_a.mint,
+      tokenMintB: token_b.mint,
+      sqrtPrice: whirlpool_data.sqrtPrice,
+      tickCurrentIndex: whirlpool_data.tickCurrentIndex,
+      // Pass the price range of the position as is
+      tickLowerIndex: position.getData().tickLowerIndex,
+      tickUpperIndex: position.getData().tickUpperIndex,
+      // Input token and amount
+      inputTokenMint: token_b.mint,
+      inputTokenAmount: quote_token_amount,
+      // Acceptable slippage
+      slippageTolerance: slippage,
+      // Get token info for TokenExtensions
+      tokenExtensionCtx: await TokenExtensionUtil.buildTokenExtensionContext(this.ctx.fetcher, whirlpool_data),
     });
 
     // Output the estimation
-    console.log("devSAMO max input:", DecimalUtil.fromBN(quote.tokenMaxA, token_a.decimals).toFixed(token_a.decimals));
-    console.log("devUSDC max input:", DecimalUtil.fromBN(quote.tokenMaxB, token_b.decimals).toFixed(token_b.decimals));
+    console.log("Token A max input:", DecimalUtil.fromBN(quote.tokenMaxA, token_a.decimals).toFixed(token_a.decimals));
+    console.log("Token B max input:", DecimalUtil.fromBN(quote.tokenMaxB, token_b.decimals).toFixed(token_b.decimals));
 
     // Output the liquidity before transaction execution
     console.log("liquidity(before):", position.getData().liquidity.toString());
@@ -86,7 +86,9 @@ export default function addLiquidityRoute(fastify: FastifyInstance, folderName: 
       tags: [folderName],
       description: 'Add liquidity to an Orca position',
       body: Type.Object({
-        positionAddress: Type.String(),
+        positionAddress: Type.String({ default: 'FCDbmwuE3WSuZh5kM2tkTiojgoVYeis1yJs6Ewe6KETi' }),
+        quoteTokenAmount: Type.Number({ default: 1 }),
+        slippagePct: Type.Optional(Type.Number({ default: 1 })),
       }),
       response: {
         200: Type.Object({
@@ -95,9 +97,17 @@ export default function addLiquidityRoute(fastify: FastifyInstance, folderName: 
       }
     },
     handler: async (request, reply) => {
-      const { positionAddress } = request.body as { positionAddress: string };
+      const { positionAddress, quoteTokenAmount, slippagePct } = request.body as {
+        positionAddress: string;
+        quoteTokenAmount: number;
+        slippagePct?: number;
+      };
       fastify.log.info(`Adding liquidity to Orca position: ${positionAddress}`);
-      const result = await controller.addLiquidity(positionAddress);
+      const result = await controller.addLiquidity(
+        positionAddress,
+        quoteTokenAmount,
+        slippagePct
+      );
       return result;
     }
   });

@@ -7,14 +7,11 @@ export class RaydiumController extends SolanaController {
 
   constructor() {
     super();
-    if (!this.keypair) {
-      throw new Error('Keypair not loaded. SOLANA_PRIVATE_KEY may not be set.');
-    }  
     this.cluster = this.network === 'mainnet-beta' ? 'mainnet' : this.network as Cluster;    
-    this.initializeClient();
+    this.loadRaydium();
   }
 
-  protected async initializeClient(): Promise<void> {
+  protected async loadRaydium(): Promise<void> {
     try {
       if (!this.raydium) {
         this.raydium = await Raydium.load({

@@ -10,19 +10,16 @@ export class OrcaController extends SolanaController {
 
   constructor() {
     super();
-    if (!this.keypair) {
-      throw new Error('Keypair not loaded. SOLANA_PRIVATE_KEY may not be set.');
-    }
     const wallet = new Wallet(this.keypair);
     const provider = new AnchorProvider(this.connection, wallet, {
       commitment: "processed",
     });
 
     this.ctx = WhirlpoolContext.withProvider(provider, ORCA_WHIRLPOOL_PROGRAM_ID);
-    this.initializeClient();
+    this.loadOrca();
   }
 
-  protected async initializeClient(): Promise<void> {
+  protected async loadOrca(): Promise<void> {
     try {
       if (!this.client) {
         this.client = await buildWhirlpoolClient(this.ctx);

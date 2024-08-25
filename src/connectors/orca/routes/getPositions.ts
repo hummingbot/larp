@@ -8,7 +8,7 @@ import { OrcaController } from '../orca.controller';
 
 class GetPositionsController extends OrcaController {
   async getPositions(address: string): Promise<string[]> {
-    await this.initializeClient();
+    await this.loadOrca();
 
     const publicKey = new PublicKey(address);
 
