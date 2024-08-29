@@ -79,7 +79,6 @@ class GetPositionsController extends OrcaController {
       throw new Error('Position info does not match the expected schema');
     }
 
-    // Return the status of the position
     return JSON.stringify(positionInfo);
   }
 }
