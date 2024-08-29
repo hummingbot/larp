@@ -4,6 +4,7 @@ import getPositionsRoute from './routes/getPositions';
 import getPositionInfoRoute from './routes/getPositionInfo';
 import addLiquidityRoute from './routes/addLiquidity';
 import removeLiquidityRoute from './routes/removeLiquidity';
+import getFeesQuoteRoute from './routes/getFeesQuote';
 
 export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Get the folder name dynamically
@@ -14,6 +15,7 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   getPositionInfoRoute(fastify, folderName);
   addLiquidityRoute(fastify, folderName);
   removeLiquidityRoute(fastify, folderName);
+  getFeesQuoteRoute(fastify, folderName);
 };
 
 export default orcaRoutes;

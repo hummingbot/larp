@@ -62,7 +62,7 @@ class GetPositionsController extends OrcaController {
       );
 
       const positionInfo = {
-        position: publicKey.toBase58(),
+        position: p.toBase58(),
         whirlpoolAddress: data.whirlpool.toBase58(),
         whirlpoolPrice: price.toFixed(token_b.decimals),
         tokenA: token_a.mint.toBase58(),
