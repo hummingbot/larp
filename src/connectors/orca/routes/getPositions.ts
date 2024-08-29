@@ -18,7 +18,9 @@ class GetPositionsController extends OrcaController {
     // Get candidate addresses for the position
     const whirlpoolPositionCandidatePubkeys = tokenAccounts.map((ta) => {
       const parsed = unpackAccount(ta.pubkey, ta.account);
+      // Derive the address of Whirlpool's position from the mint address (whether or not it exists)
       const pda = PDAUtil.getPosition(this.ctx.program.programId, parsed.mint);
+      // Returns the address of the Whirlpool position only if the number of tokens is 1 (ignores empty token accounts and non-NFTs)
       return new BN(parsed.amount.toString()).eq(new BN(1)) ? pda.publicKey : undefined;
     }).filter(pubkey => pubkey !== undefined);
 
@@ -41,14 +43,12 @@ export default function getPositionsRoute(fastify: FastifyInstance, folderName: 
   fastify.get(`/${folderName}/positions/:address`, {
     schema: {
       tags: [folderName],
-      description: 'Retrieve Orca positions owned by an address',
+      description: 'Retrieve a list of Orca positions owned by an address',
       params: Type.Object({
         address: Type.String()
       }),
       response: {
-        200: Type.Object({
-          positions: Type.Array(Type.String())
-        })
+        200: Type.Array(Type.String())
       }
     },
     handler: async (request, reply) => {
@@ -56,7 +56,7 @@ export default function getPositionsRoute(fastify: FastifyInstance, folderName: 
       fastify.log.info(`Getting Orca positions for address: ${address}`);
       
       const positions = await controller.getPositions(address);
-      return { positions };
+      return positions;
     }
   });
 }
