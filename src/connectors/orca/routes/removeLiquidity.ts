@@ -14,7 +14,7 @@ class RemoveLiquidityController extends OrcaController {
     positionAddress: string,
     percentageToRemove: number,
     slippagePct?: number
-  ): Promise<{ signature: string }> {
+  ): Promise<{ signature: string; liquidityBefore: string; liquidityAfter: string }> {
     await this.loadOrca();
 
     const position_pubkey = new PublicKey(positionAddress);
@@ -58,8 +58,9 @@ class RemoveLiquidityController extends OrcaController {
     console.log("Token A min output:", DecimalUtil.fromBN(quote.tokenMinA, token_a.decimals).toFixed(token_a.decimals));
     console.log("Token B min output:", DecimalUtil.fromBN(quote.tokenMinB, token_b.decimals).toFixed(token_b.decimals));
 
-    // Output the liquidity before transaction execution
-    console.log("liquidity(before):", position.getData().liquidity.toString());
+    // Get liquidity before transaction
+    const liquidityBefore = position.getData().liquidity.toString();
+    console.log("liquidity(before):", liquidityBefore);
 
     // Create a transaction
     const decrease_liquidity_tx = await position.decreaseLiquidity(quote);
@@ -72,11 +73,14 @@ class RemoveLiquidityController extends OrcaController {
     const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
     await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
 
-    // Output the liquidity after transaction execution
-    console.log("liquidity(after):", (await position.refreshData()).liquidity.toString());
+    // Get liquidity after transaction
+    const liquidityAfter = (await position.refreshData()).liquidity.toString();
+    console.log("liquidity(after):", liquidityAfter);
 
     return {
       signature,
+      liquidityBefore,
+      liquidityAfter,
     };
   }
 }
@@ -96,6 +100,8 @@ export default function removeLiquidityRoute(fastify: FastifyInstance, folderNam
       response: {
         200: Type.Object({
           signature: Type.String(),
+          liquidityBefore: Type.String(),
+          liquidityAfter: Type.String(),
         })
       }
     },
