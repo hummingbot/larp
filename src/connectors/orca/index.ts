@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
 import getPositionsRoute from './routes/getPositions';
 import getPositionInfoRoute from './routes/getPositionInfo';
+import openPositionRoute from './routes/openPosition';
 import addLiquidityRoute from './routes/addLiquidity';
 import removeLiquidityRoute from './routes/removeLiquidity';
 import getFeesQuoteRoute from './routes/getFeesQuote';
@@ -14,6 +15,7 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   // Register individual routes
   getPositionsRoute(fastify, folderName);
   getPositionInfoRoute(fastify, folderName);
+  openPositionRoute(fastify, folderName);
   addLiquidityRoute(fastify, folderName);
   removeLiquidityRoute(fastify, folderName);
   getFeesQuoteRoute(fastify, folderName);
