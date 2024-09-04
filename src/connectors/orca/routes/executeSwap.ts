@@ -8,18 +8,14 @@ import {
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 
-class GetSwapQuoteController extends OrcaController {
-  async getSwapQuote(
+class ExecuteSwapController extends OrcaController {
+  async executeSwap(
     inputTokenAddress: string,
     outputTokenAddress: string,
-    amount: string,
-    slippagePct?: number,
-    tickSpacing?: number
-  ): Promise<{
-    estimatedAmountIn: string;
-    estimatedAmountOut: string;
-    otherAmountThreshold: string;
-  }> {
+    amount: number,
+    tickSpacing: number,
+    slippagePct?: number
+  ): Promise<{ signature: string }> {
     await this.loadOrca();
 
     const inputToken = { mint: new PublicKey(inputTokenAddress), decimals: 6 }; // Assuming USDC-like decimals
@@ -27,10 +23,10 @@ class GetSwapQuoteController extends OrcaController {
 
     const slippage = slippagePct
       ? Percentage.fromFraction(slippagePct * 100, 10000)
-      : Percentage.fromFraction(1, 100); // Default 1% slippage
+      : Percentage.fromFraction(10, 1000); // Default 1% slippage
 
     const tick_spacing = tickSpacing || 64;  // Default 64 ticks
-
+ 
     // re-order tokens
     const [mintX, mintY] = PoolUtil.orderMints(inputTokenAddress, outputTokenAddress);
 
@@ -56,47 +52,52 @@ class GetSwapQuoteController extends OrcaController {
       IGNORE_CACHE,
     );
 
-    return {
-      estimatedAmountIn: DecimalUtil.fromBN(quote.estimatedAmountIn, inputToken.decimals).toString(),
-      estimatedAmountOut: DecimalUtil.fromBN(quote.estimatedAmountOut, outputToken.decimals).toString(),
-      otherAmountThreshold: DecimalUtil.fromBN(quote.otherAmountThreshold, outputToken.decimals).toString(),
-    };
+    console.log("estimatedAmountIn:", DecimalUtil.fromBN(quote.estimatedAmountIn, inputToken.decimals).toString(), "inputToken");
+    console.log("estimatedAmountOut:", DecimalUtil.fromBN(quote.estimatedAmountOut, outputToken.decimals).toString(), "outputToken");
+    console.log("otherAmountThreshold:", DecimalUtil.fromBN(quote.otherAmountThreshold, outputToken.decimals).toString(), "outputToken");
+
+    const tx = await whirlpool.swap(quote);
+    const signature = await tx.buildAndExecute();
+    console.log("signature:", signature);
+
+    const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
+    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
+
+    return { signature };
   }
 }
 
-export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: string) {
-  const controller = new GetSwapQuoteController();
+export default function executeSwapRoute(fastify: FastifyInstance, folderName: string) {
+  const controller = new ExecuteSwapController();
 
-  fastify.get(`/${folderName}/quote-swap`, {
+  fastify.post(`/${folderName}/execute-swap`, {
     schema: {
       tags: [folderName],
-      description: 'Get a swap quote for Orca',
-      querystring: Type.Object({
+      description: 'Execute a swap on Orca',
+      body: Type.Object({
         inputTokenAddress: Type.String(),
         outputTokenAddress: Type.String(),
-        amount: Type.String(),
+        amount: Type.Number(),
+        tickSpacing: Type.Number({ default: 64 }),
         slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
-        tickSpacing: Type.Optional(Type.Number({ default: 64 })),
       }),
       response: {
         200: Type.Object({
-          estimatedAmountIn: Type.String(),
-          estimatedAmountOut: Type.String(),
-          otherAmountThreshold: Type.String(),
+          signature: Type.String(),
         })
       }
     },
     handler: async (request, reply) => {
-      const { inputTokenAddress, outputTokenAddress, amount, slippagePct, tickSpacing } = request.query as {
+      const { inputTokenAddress, outputTokenAddress, amount, tickSpacing, slippagePct } = request.body as {
         inputTokenAddress: string;
         outputTokenAddress: string;
-        amount: string;
+        amount: number;
+        tickSpacing: number;
         slippagePct?: number;
-        tickSpacing?: number;
       };
-      fastify.log.info(`Getting Orca swap quote for ${inputTokenAddress} to ${outputTokenAddress}`);
-      const quote = await controller.getSwapQuote(inputTokenAddress, outputTokenAddress, amount, slippagePct, tickSpacing);
-      return quote;
+      fastify.log.info(`Executing Orca swap from ${inputTokenAddress} to ${outputTokenAddress}`);
+      const result = await controller.executeSwap(inputTokenAddress, outputTokenAddress, amount, tickSpacing, slippagePct);
+      return result;
     }
   });
 }
