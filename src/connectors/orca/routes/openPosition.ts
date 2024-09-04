@@ -9,9 +9,6 @@ import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 
-// devnet config for Orca
-const DEVNET_WHIRLPOOLS_CONFIG = new PublicKey("FcrweFY1G9HJAHG5inkGB6pKg1HZ6x9UC2WioAfWrGkR");
-
 class OpenPositionController extends OrcaController {
   async openPosition(
     baseTokenAddress: string,
@@ -27,7 +24,7 @@ class OpenPositionController extends OrcaController {
     // Get devSAMO/devUSDC whirlpool
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
-      DEVNET_WHIRLPOOLS_CONFIG,
+      this.DEVNET_WHIRLPOOLS_CONFIG,
       new PublicKey(baseTokenAddress),
       new PublicKey(quoteTokenAddress),
       tickSpacing
