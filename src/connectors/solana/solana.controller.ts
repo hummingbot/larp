@@ -109,7 +109,7 @@ export class SolanaController {
     return this.tokenList.content || [];
   }
 
-  public async getTokenbyAddress(tokenAddress: string, useApi: boolean = false): Promise<Token> {
+  public async getTokenByAddress(tokenAddress: string, useApi: boolean = false): Promise<Token> {
     if (useApi && this.network !== 'mainnet-beta') {
       throw new Error('API usage is only allowed on mainnet-beta');
     }
@@ -136,7 +136,7 @@ export class SolanaController {
     return token;
   }
 
-  public async getTokenbySymbol(symbol: string): Promise<Token> {
+  public async getTokenBySymbol(symbol: string): Promise<Token> {
     const tokenList = this.getTokenList();
     const foundToken = tokenList.find(t => t.symbol.toLowerCase() === symbol.toLowerCase());
     

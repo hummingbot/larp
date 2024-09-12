@@ -8,11 +8,12 @@ import {
 import { DecimalUtil, Percentage } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
+import { SolanaController } from '../../solana/solana.controller';
 
 class OpenPositionController extends OrcaController {
   async openPosition(
-    baseTokenAddress: string,
-    quoteTokenAddress: string,
+    baseSymbol: string,
+    quoteSymbol: string,
     tickSpacing: number,
     lowerPrice: Decimal,
     upperPrice: Decimal,
@@ -21,12 +22,20 @@ class OpenPositionController extends OrcaController {
   ): Promise<{ signature: string; positionMint: string }> {
     await this.loadOrca();
 
+    const solanaController = new SolanaController();
+    const baseToken = await solanaController.getTokenBySymbol(baseSymbol);
+    const quoteToken = await solanaController.getTokenBySymbol(quoteSymbol);
+
+    if (!baseToken || !quoteToken) {
+      throw new Error('Invalid token symbols');
+    }
+
     // Get devSAMO/devUSDC whirlpool
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
       this.DEVNET_WHIRLPOOLS_CONFIG,
-      new PublicKey(baseTokenAddress),
-      new PublicKey(quoteTokenAddress),
+      new PublicKey(baseToken.address),
+      new PublicKey(quoteToken.address),
       tickSpacing
     ).publicKey;
     console.log("whirlpool_key:", whirlpool_pubkey.toBase58());
@@ -40,7 +49,7 @@ class OpenPositionController extends OrcaController {
     console.log("price:", price.toFixed(token_b.decimals));
 
     // Set price range, amount of tokens to deposit, and acceptable slippage
-    const quote_token_amount = DecimalUtil.toBN(new Decimal(quoteTokenAmount.toString()), token_b.decimals);
+    const quote_token_amount = DecimalUtil.toBN(new Decimal(quoteTokenAmount.toString()), quoteToken.decimals);
     const slippage = slippagePct
       ? Percentage.fromFraction(slippagePct * 100, 10000)
       : Percentage.fromFraction(10, 1000); // Default 1% slippage
@@ -104,8 +113,8 @@ export default function openPositionRoute(fastify: FastifyInstance, folderName: 
       tags: [folderName],
       description: 'Open a new Orca position',
       body: Type.Object({
-        baseTokenAddress: Type.String({ default: 'Jd4M8bfJG3sAkd82RsGWyEXoaBXQP7njFzBwEaCTuDa' }),
-        quoteTokenAddress: Type.String({ default: 'BRjpCHtyQLNCo8gqRUr8jtdAj5AjPYQaoqbvcZiHok1k' }),
+        baseSymbol: Type.String({ default: 'devSAMO' }),
+        quoteSymbol: Type.String({ default: 'devUSDC' }),
         tickSpacing: Type.Number({ default: 64 }),
         lowerPrice: Type.String({ default: '0.005' }),
         upperPrice: Type.String({ default: '0.02' }),
@@ -120,19 +129,19 @@ export default function openPositionRoute(fastify: FastifyInstance, folderName: 
       }
     },
     handler: async (request, reply) => {
-      const { baseTokenAddress, quoteTokenAddress, tickSpacing, lowerPrice, upperPrice, quoteTokenAmount, slippagePct } = request.body as {
-        baseTokenAddress: string;
-        quoteTokenAddress: string;
+      const { baseSymbol, quoteSymbol, tickSpacing, lowerPrice, upperPrice, quoteTokenAmount, slippagePct } = request.body as {
+        baseSymbol: string;
+        quoteSymbol: string;
         tickSpacing: number;
         lowerPrice: string;
         upperPrice: string;
         quoteTokenAmount: number;
         slippagePct?: number;
       };
-      fastify.log.info(`Opening new Orca position: ${baseTokenAddress}/${quoteTokenAddress}`);
+      fastify.log.info(`Opening new Orca position: ${baseSymbol}/${quoteSymbol}`);
       const result = await controller.openPosition(
-        baseTokenAddress,
-        quoteTokenAddress,
+        baseSymbol,
+        quoteSymbol,
         tickSpacing,
         new Decimal(lowerPrice),
         new Decimal(upperPrice),

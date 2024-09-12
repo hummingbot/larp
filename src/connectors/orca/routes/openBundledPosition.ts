@@ -9,11 +9,12 @@ import { TransactionBuilder } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { OrcaController } from '../orca.controller';
+import { SolanaController } from '../../solana/solana.controller';
 
 class OpenBundledPositionController extends OrcaController {
   async openBundledPosition(
-    baseTokenAddress: string,
-    quoteTokenAddress: string,
+    baseSymbol: string,
+    quoteSymbol: string,
     tickSpacing: number,
     lowerPrice: Decimal,
     upperPrice: Decimal,
@@ -22,12 +23,20 @@ class OpenBundledPositionController extends OrcaController {
   ): Promise<{ signature: string; bundledPositions: string[] }> {
     await this.loadOrca();
 
+    const solanaController = new SolanaController();
+    const baseToken = await solanaController.getTokenBySymbol(baseSymbol);
+    const quoteToken = await solanaController.getTokenBySymbol(quoteSymbol);
+
+    if (!baseToken || !quoteToken) {
+      throw new Error('Invalid token symbols');
+    }
+
     // Get whirlpool
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
       this.DEVNET_WHIRLPOOLS_CONFIG,
-      new PublicKey(baseTokenAddress),
-      new PublicKey(quoteTokenAddress),
+      new PublicKey(baseToken.address),
+      new PublicKey(quoteToken.address),
       tickSpacing
     ).publicKey;
     console.log("whirlpool_key:", whirlpool_pubkey.toBase58());
@@ -123,8 +132,8 @@ export default function openBundledPositionRoute(fastify: FastifyInstance, folde
       tags: [folderName],
       description: 'Open multiple new bundled Orca positions',
       body: Type.Object({
-        baseTokenAddress: Type.String({ default: 'Jd4M8bfJG3sAkd82RsGWyEXoaBXQP7njFzBwEaCTuDa' }),
-        quoteTokenAddress: Type.String({ default: 'BRjpCHtyQLNCo8gqRUr8jtdAj5AjPYQaoqbvcZiHok1k' }),
+        baseSymbol: Type.String({ default: 'devSAMO' }),
+        quoteSymbol: Type.String({ default: 'devUSDC' }),
         tickSpacing: Type.Number({ default: 64 }),
         lowerPrice: Type.String({ default: '0.005' }),
         upperPrice: Type.String({ default: '0.02' }),
@@ -139,19 +148,19 @@ export default function openBundledPositionRoute(fastify: FastifyInstance, folde
       }
     },
     handler: async (request, reply) => {
-      const { baseTokenAddress, quoteTokenAddress, tickSpacing, lowerPrice, upperPrice, positionBundleAddress, numberOfPositions } = request.body as {
-        baseTokenAddress: string;
-        quoteTokenAddress: string;
+      const { baseSymbol, quoteSymbol, tickSpacing, lowerPrice, upperPrice, positionBundleAddress, numberOfPositions } = request.body as {
+        baseSymbol: string;
+        quoteSymbol: string;
         tickSpacing: number;
         lowerPrice: string;
         upperPrice: string;
         positionBundleAddress: string;
         numberOfPositions: number;
       };
-      fastify.log.info(`Opening ${numberOfPositions} new bundled Orca positions: ${baseTokenAddress}/${quoteTokenAddress}`);
+      fastify.log.info(`Opening ${numberOfPositions} new bundled Orca positions: ${baseSymbol}/${quoteSymbol}`);
       const result = await controller.openBundledPosition(
-        baseTokenAddress,
-        quoteTokenAddress,
+        baseSymbol,
+        quoteSymbol,
         tickSpacing,
         new Decimal(lowerPrice),
         new Decimal(upperPrice),
