@@ -2,7 +2,8 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
 import getBalanceRoute from './routes/getBalance';
 import getTokenListRoute from './routes/listTokens';
-import getTokenInfoRoute from './routes/getTokenInfo';
+import getAddressInfoRoute from './routes/getAddressInfo';
+import getSymbolInfoRoute from './routes/getSymbolInfo';
 
 export const solanaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Get the folder name dynamically
@@ -11,7 +12,8 @@ export const solanaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
   // Register individual routes
   getBalanceRoute(fastify, folderName);
   getTokenListRoute(fastify, folderName);
-  getTokenInfoRoute(fastify, folderName);
+  getAddressInfoRoute(fastify, folderName);
+  getSymbolInfoRoute(fastify, folderName);
 }
 
 export default solanaRoutes;
