@@ -16,6 +16,8 @@
     "@fastify/type-provider-typebox": "^4.1.0",
     "@raydium-io/raydium-sdk-v2": "^0.1.64-alpha",
     "@sinclair/typebox": "^0.33.7",
+    "@solana/spl-token": "^0.4.8",
+    "@solflare-wallet/utl-sdk": "^1.4.0",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "fastify-type-provider-zod": "^2.0.0",
@@ -25,7 +27,6 @@
   "devDependencies": {
     "@coral-xyz/anchor": "^0.29.0",
     "@orca-so/whirlpools-sdk": "^0.13.5",
-    "@solana/spl-token": "^0.4.8",
     "@solana/web3.js": "^1.95.3",
     "@types/node": "^22.5.0",
     "@typescript-eslint/eslint-plugin": "^8.2.0",

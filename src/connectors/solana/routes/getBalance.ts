@@ -24,12 +24,12 @@ class GetBalanceController extends SolanaController {
   async getBalance(address?: string): Promise<string> {
     const publicKey = address ? new PublicKey(address) : new PublicKey(this.getWallet().publicKey);
 
-    const tokenDefs = {
-      "BRjpCHtyQLNCo8gqRUr8jtdAj5AjPYQaoqbvcZiHok1k": {name: "devUSDC", decimals: 6},
-      "H8UekPGwePSmQ3ttuYGPU1szyFfjZR4N53rymSFwpLPm": {name: "devUSDT", decimals: 6},
-      "Jd4M8bfJG3sAkd82RsGWyEXoaBXQP7njFzBwEaCTuDa":  {name: "devSAMO", decimals: 9},
-      "Afn8YB1p4NsoZeS5XJBZ18LTfEy5NFPwN46wapZcBQr6": {name: "devTMAC", decimals: 6},
-    };
+    // Fetch the token list
+    const tokenList = this.getTokenList();
+    const tokenDefs = tokenList.reduce((acc, token) => {
+      acc[token.address] = { name: token.symbol, decimals: token.decimals };
+      return acc;
+    }, {});
 
     // get all token accounts for the provided address
     const accounts = await this.connection.getTokenAccountsByOwner(
