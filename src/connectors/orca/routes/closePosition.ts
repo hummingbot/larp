@@ -13,12 +13,12 @@ import {
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { OrcaController } from '../orca.controller';
 
-const ClosePositionResponseSchema = Type.Object({
+const ClosePositionResponse = Type.Object({
   signature: Type.String(),
 });
 
 class ClosePositionController extends OrcaController {
-  private closePositionResponseValidator = TypeCompiler.Compile(ClosePositionResponseSchema);
+  private closePositionResponseValidator = TypeCompiler.Compile(ClosePositionResponse);
 
   async closePosition(positionAddress: string, slippagePct: number): Promise<string> {
     await this.loadOrca();
@@ -214,7 +214,7 @@ export default function closePositionRoute(fastify: FastifyInstance, folderName:
         slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
       }),
       response: {
-        200: ClosePositionResponseSchema
+        200: ClosePositionResponse
       },
     },
     handler: async (request, reply) => {

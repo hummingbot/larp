@@ -7,11 +7,11 @@ import { BN } from "@coral-xyz/anchor";
 import { PDAUtil, IGNORE_CACHE, PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
-import { PositionInfoSchema } from './getPositionInfo';
+import { PositionInfoResponse } from './getPositionInfo';
 
 class GetPositionsController extends OrcaController {
-  private positionInfoValidator = TypeCompiler.Compile(PositionInfoSchema);
-  async getPositions(address?: string): Promise<typeof PositionInfoSchema[]> {
+  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponse);
+  async getPositions(address?: string): Promise<typeof PositionInfoResponse[]> {
     await this.loadOrca();
 
     const publicKey = address ? new PublicKey(address) : this.ctx.wallet.publicKey;
@@ -102,7 +102,7 @@ export default function getPositionsRoute(fastify: FastifyInstance, folderName: 
         address: Type.Optional(Type.String())
       }),
       response: {
-        200: Type.Array(PositionInfoSchema)
+        200: Type.Array(PositionInfoResponse)
       }
     },
     handler: async (request, reply) => {

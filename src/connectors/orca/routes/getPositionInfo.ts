@@ -6,7 +6,7 @@ import { PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
 
-export const PositionInfoSchema = Type.Object({
+export const PositionInfoResponse = Type.Object({
   position: Type.String(),
   whirlpoolAddress: Type.String(),
   whirlpoolPrice: Type.String(),
@@ -26,7 +26,7 @@ export const PositionInfoSchema = Type.Object({
 });
 
 class GetPositionsController extends OrcaController {
-  private positionInfoValidator = TypeCompiler.Compile(PositionInfoSchema);
+  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponse);
   async getPositionInfo(positionAddress: string): Promise<string> {
     await this.loadOrca();
 
@@ -94,7 +94,7 @@ export default function getPositionInfoRoute(fastify: FastifyInstance, folderNam
         positionAddress: Type.String()
       }),
       response: {
-        200: PositionInfoSchema
+        200: PositionInfoResponse
       }
     },
     handler: async (request, reply) => {

@@ -9,12 +9,12 @@ import {
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { OrcaController } from '../orca.controller';
 
-const CollectFeesResponseSchema = Type.Object({
+const CollectFeesResponse = Type.Object({
   signature: Type.String(),
 });
 
 class CollectFeesController extends OrcaController {
-  private collectFeesResponseValidator = TypeCompiler.Compile(CollectFeesResponseSchema);
+  private collectFeesResponseValidator = TypeCompiler.Compile(CollectFeesResponse);
 
   async collectFees(positionAddress: string): Promise<string> {
     await this.loadOrca();
@@ -124,7 +124,7 @@ export default function collectFeesRoute(fastify: FastifyInstance, folderName: s
         positionAddress: Type.String(),
       }),
       response: {
-        200: CollectFeesResponseSchema
+        200: CollectFeesResponse
       },
     },
     handler: async (request, reply) => {

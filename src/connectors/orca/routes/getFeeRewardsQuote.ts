@@ -10,12 +10,7 @@ import { DecimalUtil } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 
-const RewardSchema = Type.Object({
-  address: Type.String(),
-  amount: Type.String(),
-});
-
-export const FeeRewardsQuoteSchema = Type.Object({
+export const QuoteFeeRewardsResponse = Type.Object({
   tokenA: Type.Object({
     address: Type.String(),
     amount: Type.String(),
@@ -24,11 +19,14 @@ export const FeeRewardsQuoteSchema = Type.Object({
     address: Type.String(),
     amount: Type.String(),
   }),
-  rewards: Type.Array(RewardSchema),
+  rewards: Type.Array(Type.Object({
+    address: Type.String(),
+    amount: Type.String(),
+  })),
 });
 
 class GetFeeRewardsQuoteController extends OrcaController {
-  private feeRewardsQuoteValidator = TypeCompiler.Compile(FeeRewardsQuoteSchema);
+  private feeRewardsQuoteValidator = TypeCompiler.Compile(QuoteFeeRewardsResponse);
 
   async getFeeRewardsQuote(
     positionAddress: string
@@ -117,7 +115,7 @@ export default function getFeeRewardsQuoteRoute(fastify: FastifyInstance, folder
         positionAddress: Type.String(),
       }),
       response: {
-        200: FeeRewardsQuoteSchema
+        200: QuoteFeeRewardsResponse
       },
     },
     handler: async (request, reply) => {
