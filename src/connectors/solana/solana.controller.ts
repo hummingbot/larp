@@ -1,5 +1,18 @@
 import { Connection, Keypair, clusterApiUrl, Cluster } from '@solana/web3.js';
 import fs from 'fs';
+import { PublicKey } from "@solana/web3.js";
+import { Type } from '@sinclair/typebox';
+
+export const SolanaAddressSchema = Type.String({
+  pattern: '^[1-9A-HJ-NP-Za-km-z]{32,44}$',
+  description: 'Solana address in base58 format'
+});
+
+export const BadRequestResponseSchema = Type.Object({
+  statusCode: Type.Number(),
+  error: Type.String(),
+  message: Type.String()
+});
 
 export type SolanaNetworkType = 'mainnet-beta' | 'devnet';
 
@@ -19,6 +32,15 @@ export class SolanaController {
       throw new Error('Invalid SOLANA_NETWORK. Must be either "mainnet-beta" or "devnet"');
     }
     return network;
+  }
+
+  public validateSolanaAddress(address: string): boolean {
+    try {
+      new PublicKey(address);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   protected loadWallet(): void {
