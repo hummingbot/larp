@@ -9,6 +9,7 @@ import {
 import { DecimalUtil } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
+import { SolanaController } from '../../solana/solana.controller';
 
 export const QuoteFeeRewardsResponse = Type.Object({
   tokenA: Type.Object({
@@ -27,6 +28,12 @@ export const QuoteFeeRewardsResponse = Type.Object({
 
 class GetFeeRewardsQuoteController extends OrcaController {
   private feeRewardsQuoteValidator = TypeCompiler.Compile(QuoteFeeRewardsResponse);
+  private solanaController: SolanaController;
+
+  constructor() {
+    super();
+    this.solanaController = new SolanaController();
+  }
 
   async getFeeRewardsQuote(
     positionAddress: string
@@ -83,16 +90,17 @@ class GetFeeRewardsQuoteController extends OrcaController {
         address: tokenB.mint.toBase58(),
         amount: DecimalUtil.adjustDecimals(new Decimal(quote_fee.feeOwedB.toString()), tokenB.decimals).toString()
       },
-      rewards: quote_reward.rewardOwed.map((reward, i) => {
+      rewards: await Promise.all(quote_reward.rewardOwed.map(async (reward, i) => {
         const reward_info = whirlpool.getData().rewardInfos[i];
         if (PoolUtil.isRewardInitialized(reward_info)) {
+          const rewardToken = await this.solanaController.getTokenByAddress(reward_info.mint.toBase58());
           return {
             address: reward_info.mint.toBase58(),
-            amount: DecimalUtil.adjustDecimals(new Decimal(reward.toString()), reward_info.tokenMintDecimals).toString()
+            amount: DecimalUtil.adjustDecimals(new Decimal(reward.toString()), rewardToken.decimals).toString()
           };
         }
         return null;
-      }).filter(Boolean)
+      })).then(results => results.filter(Boolean))
     };
 
     // Validate the feeRewardsQuote object against the schema
