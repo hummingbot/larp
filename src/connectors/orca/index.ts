@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
 import getPositionsRoute from './routes/getPositions';
 import getPositionInfoRoute from './routes/getPositionInfo';
+import getPositionsInBundleRoute from './routes/getPositionsInBundle';
 import getFeesQuoteRoute from './routes/getFeesQuote';
 import getSwapQuoteRoute from './routes/getSwapQuote';
 import executeSwapRoute from './routes/executeSwap';
@@ -12,8 +13,9 @@ import removeLiquidityRoute from './routes/removeLiquidity';
 import collectFeesRoute from './routes/collectFees';
 import collectFeeRewardsRoute from './routes/collectFeeRewards';
 import createPositionBundleRoute from './routes/createPositionBundle';
-import openBundledPositionRoute from './routes/openBundledPosition';
-
+import openPositionInBundleRoute from './routes/openPositionInBundle';
+import addLiquidityInBundleRoute from './routes/addLiquidityInBundle';
+import deletePositionBundleRoute from './routes/deletePositionBundle';
 
 
 export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
@@ -23,6 +25,7 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   // Register individual routes
   getPositionsRoute(fastify, folderName);
   getPositionInfoRoute(fastify, folderName);
+  getPositionsInBundleRoute(fastify, folderName);
   getFeesQuoteRoute(fastify, folderName);
   getSwapQuoteRoute(fastify, folderName);
   executeSwapRoute(fastify, folderName);
@@ -33,7 +36,9 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   collectFeesRoute(fastify, folderName);
   collectFeeRewardsRoute(fastify, folderName);
   createPositionBundleRoute(fastify, folderName);
-  openBundledPositionRoute(fastify, folderName);
+  openPositionInBundleRoute(fastify, folderName);
+  addLiquidityInBundleRoute(fastify, folderName);
+  deletePositionBundleRoute(fastify, folderName);
 };
 
 export default orcaRoutes;
