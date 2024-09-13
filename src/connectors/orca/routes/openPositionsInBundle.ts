@@ -11,8 +11,8 @@ import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { OrcaController } from '../orca.controller';
 import { SolanaController } from '../../solana/solana.controller';
 
-class OpenPositionInBundleController extends OrcaController {
-  async openPositionInBundle(
+class OpenPositionsInBundleController extends OrcaController {
+  async openPositionsInBundle(
     baseSymbol: string,
     quoteSymbol: string,
     tickSpacing: number,
@@ -124,10 +124,10 @@ class OpenPositionInBundleController extends OrcaController {
   }
 }
 
-export default function openBundledPositionRoute(fastify: FastifyInstance, folderName: string) {
-  const controller = new OpenPositionInBundleController();
+export default function openPositionsInBundleRoute(fastify: FastifyInstance, folderName: string) {
+  const controller = new OpenPositionsInBundleController();
 
-  fastify.post(`/${folderName}/open-bundled-position`, {
+  fastify.post(`/${folderName}/open-positions-in-bundle`, {
     schema: {
       tags: [folderName],
       description: 'Open multiple new bundled Orca positions',
@@ -158,7 +158,7 @@ export default function openBundledPositionRoute(fastify: FastifyInstance, folde
         numberOfPositions: number;
       };
       fastify.log.info(`Opening ${numberOfPositions} new bundled Orca positions: ${baseSymbol}/${quoteSymbol}`);
-      const result = await controller.openPositionInBundle(
+      const result = await controller.openPositionsInBundle(
         baseSymbol,
         quoteSymbol,
         tickSpacing,

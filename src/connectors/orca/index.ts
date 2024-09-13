@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
-import getPositionsOwnedByRoute from './routes/getPositionsOwnedBy';
 import getPositionInfoRoute from './routes/getPositionInfo';
 import getPositionsInBundleRoute from './routes/getPositionsInBundle';
 import getFeesQuoteRoute from './routes/getFeesQuote';
@@ -13,7 +12,7 @@ import removeLiquidityRoute from './routes/removeLiquidity';
 import collectFeesRoute from './routes/collectFees';
 import collectFeeRewardsRoute from './routes/collectFeeRewards';
 import createPositionBundleRoute from './routes/createPositionBundle';
-import openPositionInBundleRoute from './routes/openPositionInBundle';
+import openPositionsInBundleRoute from './routes/openPositionsInBundle';
 import addLiquidityInBundleRoute from './routes/addLiquidityInBundle';
 import deletePositionBundleRoute from './routes/deletePositionBundle';
 import positionsOwnedRoute from './routes/getPositionsOwnedBy';
@@ -36,7 +35,7 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   collectFeesRoute(fastify, folderName);
   collectFeeRewardsRoute(fastify, folderName);
   createPositionBundleRoute(fastify, folderName);
-  openPositionInBundleRoute(fastify, folderName);
+  openPositionsInBundleRoute(fastify, folderName);
   addLiquidityInBundleRoute(fastify, folderName);
   deletePositionBundleRoute(fastify, folderName);
 };
