@@ -6,6 +6,7 @@ import { Type } from '@sinclair/typebox';
 import { Client, UtlConfig, Token } from '@solflare-wallet/utl-sdk';
 import { TokenInfoResponse } from './routes/listTokens';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
+import { config } from 'dotenv';
 
 // Update the TOKEN_LIST_FILE constant
 const TOKEN_LIST_FILE = process.env.SOLANA_NETWORK === 'devnet' 
@@ -32,14 +33,33 @@ export class SolanaController {
   protected tokenList: any = null;
   private utl: Client;
   private tokenInfoValidator: ReturnType<typeof TypeCompiler.Compile>;
+  private static solanaLogged: boolean = false;
 
   constructor() {
     this.network = this.validateSolanaNetwork(process.env.SOLANA_NETWORK);
-    this.connection = new Connection(clusterApiUrl(this.network as Cluster));
+    config(); // Load environment variables
+    const rpcUrlOverride = process.env.SOLANA_RPC_URL_OVERRIDE;
+    const rpcUrl = rpcUrlOverride && rpcUrlOverride.trim() !== ''
+      ? rpcUrlOverride
+      : clusterApiUrl(this.network as Cluster);
+
+    this.connection = new Connection(rpcUrl);
+    
     this.loadWallet();
     this.loadTokenList();
     this.initializeUtl();
     this.tokenInfoValidator = TypeCompiler.Compile(TokenInfoResponse);
+
+    // Log only once
+    if (!SolanaController.solanaLogged) {
+      console.log(`Solana connector initialized:
+        - Network: ${this.network}
+        - RPC URL: ${rpcUrl}
+        - Wallet Public Key: ${this.keypair.publicKey.toBase58()}
+        - Token List: ${TOKEN_LIST_FILE}
+      `);
+      SolanaController.solanaLogged = true;
+    }
   }
 
   public validateSolanaNetwork(network: string | undefined): SolanaNetworkType {
@@ -66,7 +86,6 @@ export class SolanaController {
     try {
       const secretKeyArray = JSON.parse(fs.readFileSync(walletPath, 'utf8'));
       this.keypair = Keypair.fromSecretKey(Uint8Array.from(secretKeyArray));
-      console.log(`Wallet loaded successfully. Public key: ${this.keypair.publicKey.toBase58()}`);
     } catch (error) {
       throw new Error(`Failed to load wallet JSON: ${error.message}`);
     }
@@ -76,7 +95,6 @@ export class SolanaController {
     const tokenListPath = path.join(__dirname, TOKEN_LIST_FILE);
     try {
       this.tokenList = JSON.parse(fs.readFileSync(tokenListPath, 'utf8'));
-      console.log(`Token list loaded successfully: ${TOKEN_LIST_FILE}`);
     } catch (error) {
       console.error(`Failed to load token list ${TOKEN_LIST_FILE}: ${error.message}`);
       this.tokenList = { content: [] };

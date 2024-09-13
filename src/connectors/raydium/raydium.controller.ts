@@ -23,7 +23,7 @@ export class RaydiumController extends SolanaController {
           blockhashCommitment: 'finalized',
         });
       }
-      console.log("Raydium initialized successfully");
+      console.log("Raydium connector initialized");
     } catch (error) {
       console.error("Failed to initialize Raydium:", error);
       throw error;

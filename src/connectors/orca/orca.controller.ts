@@ -8,6 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 export class OrcaController extends SolanaController {
   protected ctx: WhirlpoolContext;
   protected client: WhirlpoolClient;
+  private static orcaLogged: boolean = false;
   protected DEVNET_WHIRLPOOLS_CONFIG = new PublicKey("FcrweFY1G9HJAHG5inkGB6pKg1HZ6x9UC2WioAfWrGkR");
 
   constructor() {
@@ -26,7 +27,12 @@ export class OrcaController extends SolanaController {
       if (!this.client) {
         this.client = await buildWhirlpoolClient(this.ctx);
       }
-      console.log("Orca initialized successfully");
+      
+      // Log only once
+      if (!OrcaController.orcaLogged) {
+        console.log("Orca connector initialized");
+        OrcaController.orcaLogged = true;
+      }
     } catch (error) {
       console.error("Failed to initialize Orca:", error);
       throw error;
