@@ -7,12 +7,13 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
+import { SolanaController } from '../../solana/solana.controller';
 
 class GetSwapQuoteController extends OrcaController {
   async getSwapQuote(
-    inputTokenAddress: string,
-    outputTokenAddress: string,
-    amount: string,
+    inputTokenSymbol: string,
+    outputTokenSymbol: string,
+    amount: number,
     slippagePct?: number,
     tickSpacing?: number
   ): Promise<{
@@ -22,8 +23,13 @@ class GetSwapQuoteController extends OrcaController {
   }> {
     await this.loadOrca();
 
-    const inputToken = { mint: new PublicKey(inputTokenAddress), decimals: 6 }; // Assuming USDC-like decimals
-    const outputToken = { mint: new PublicKey(outputTokenAddress), decimals: 9 }; // Assuming SAMO-like decimals
+    const solanaController = new SolanaController();
+    const inputToken = await solanaController.getTokenBySymbol(inputTokenSymbol);
+    const outputToken = await solanaController.getTokenBySymbol(outputTokenSymbol);
+
+    if (!inputToken || !outputToken) {
+      throw new Error('Invalid token symbols');
+    }
 
     const slippage = slippagePct
       ? Percentage.fromFraction(slippagePct * 100, 10000)
@@ -32,7 +38,7 @@ class GetSwapQuoteController extends OrcaController {
     const tick_spacing = tickSpacing || 64;  // Default 64 ticks
 
     // re-order tokens
-    const [mintX, mintY] = PoolUtil.orderMints(inputTokenAddress, outputTokenAddress);
+    const [mintX, mintY] = PoolUtil.orderMints(inputToken.address, outputToken.address);
 
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
@@ -48,7 +54,7 @@ class GetSwapQuoteController extends OrcaController {
 
     const quote = await swapQuoteByInputToken(
       whirlpool,
-      inputToken.mint,
+      new PublicKey(inputToken.address),
       DecimalUtil.toBN(amount_in, inputToken.decimals),
       slippage,
       ORCA_WHIRLPOOL_PROGRAM_ID,
@@ -72,9 +78,9 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
       tags: [folderName],
       description: 'Get a swap quote for Orca',
       querystring: Type.Object({
-        inputTokenAddress: Type.String(),
-        outputTokenAddress: Type.String(),
-        amount: Type.String(),
+        inputTokenSymbol: Type.String(),
+        outputTokenSymbol: Type.String(),
+        amount: Type.Number(),
         slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
         tickSpacing: Type.Optional(Type.Number({ default: 64 })),
       }),
@@ -87,15 +93,15 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
       }
     },
     handler: async (request, reply) => {
-      const { inputTokenAddress, outputTokenAddress, amount, slippagePct, tickSpacing } = request.query as {
-        inputTokenAddress: string;
-        outputTokenAddress: string;
-        amount: string;
+      const { inputTokenSymbol, outputTokenSymbol, amount, slippagePct, tickSpacing } = request.query as {
+        inputTokenSymbol: string;
+        outputTokenSymbol: string;
+        amount: number;
         slippagePct?: number;
         tickSpacing?: number;
       };
-      fastify.log.info(`Getting Orca swap quote for ${inputTokenAddress} to ${outputTokenAddress}`);
-      const quote = await controller.getSwapQuote(inputTokenAddress, outputTokenAddress, amount, slippagePct, tickSpacing);
+      fastify.log.info(`Getting Orca swap quote for ${inputTokenSymbol} to ${outputTokenSymbol}`);
+      const quote = await controller.getSwapQuote(inputTokenSymbol, outputTokenSymbol, amount, slippagePct, tickSpacing);
       return quote;
     }
   });

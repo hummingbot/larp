@@ -25,7 +25,7 @@ class AddLiquidityInBundleController extends OrcaController {
 
     // Get the bundle indexes in use in PositionBundle
     const occupied_bundle_indexes = PositionBundleUtil.getOccupiedBundleIndexes(position_bundle);
-    console.log("occupied bundle indexes:", occupied_bundle_indexes.slice(0, Math.min(quoteTokenAmounts.length, 10)));
+    console.log("occupied bundle indexes:", occupied_bundle_indexes.slice(0, Math.max(quoteTokenAmounts.length, 10)));
 
     const slippage = slippagePct
       ? Percentage.fromFraction(slippagePct * 100, 10000)
@@ -68,6 +68,7 @@ class AddLiquidityInBundleController extends OrcaController {
       console.log(`Position ${i} - liquidity(before):`, liquiditiesBefore[i]);
 
       const increase_liquidity_tx = await position.increaseLiquidity(quote);
+      console.log("increase_liquidity_tx:", increase_liquidity_tx);
       tx_builder.addInstruction(increase_liquidity_tx.compressIx(true));
 
       positions.push(position);

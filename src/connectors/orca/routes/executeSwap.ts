@@ -7,19 +7,33 @@ import {
 } from "@orca-so/whirlpools-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
+import { SolanaController } from '../../solana/solana.controller';
+import { GetBalanceController } from '../../solana/routes/getBalance';
 
 class ExecuteSwapController extends OrcaController {
   async executeSwap(
-    inputTokenAddress: string,
-    outputTokenAddress: string,
+    inputTokenSymbol: string,
+    outputTokenSymbol: string,
     amount: number,
     tickSpacing: number,
-    slippagePct?: number
-  ): Promise<{ signature: string }> {
+    slippagePct?: number,
+    commitment: 'finalized' | 'confirmed' | 'processed' = 'finalized'
+  ): Promise<{ 
+    signature: string;
+    inputTokenBefore: string;
+    inputTokenAfter: string;
+    outputTokenBefore: string;
+    outputTokenAfter: string;
+  }> {
     await this.loadOrca();
 
-    const inputToken = { mint: new PublicKey(inputTokenAddress), decimals: 6 }; // Assuming USDC-like decimals
-    const outputToken = { mint: new PublicKey(outputTokenAddress), decimals: 9 }; // Assuming SAMO-like decimals
+    const solanaController = new SolanaController();
+    const inputToken = await solanaController.getTokenBySymbol(inputTokenSymbol);
+    const outputToken = await solanaController.getTokenBySymbol(outputTokenSymbol);
+
+    if (!inputToken || !outputToken) {
+      throw new Error('Invalid token symbols');
+    }
 
     const slippage = slippagePct
       ? Percentage.fromFraction(slippagePct * 100, 10000)
@@ -28,7 +42,7 @@ class ExecuteSwapController extends OrcaController {
     const tick_spacing = tickSpacing || 64;  // Default 64 ticks
  
     // re-order tokens
-    const [mintX, mintY] = PoolUtil.orderMints(inputTokenAddress, outputTokenAddress);
+    const [mintX, mintY] = PoolUtil.orderMints(inputToken.address, outputToken.address);
 
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
@@ -44,7 +58,7 @@ class ExecuteSwapController extends OrcaController {
 
     const quote = await swapQuoteByInputToken(
       whirlpool,
-      inputToken.mint,
+      new PublicKey(inputToken.address),
       DecimalUtil.toBN(amount_in, inputToken.decimals),
       slippage,
       ORCA_WHIRLPOOL_PROGRAM_ID,
@@ -56,14 +70,33 @@ class ExecuteSwapController extends OrcaController {
     console.log("estimatedAmountOut:", DecimalUtil.fromBN(quote.estimatedAmountOut, outputToken.decimals).toString(), "outputToken");
     console.log("otherAmountThreshold:", DecimalUtil.fromBN(quote.otherAmountThreshold, outputToken.decimals).toString(), "outputToken");
 
+    const balanceController = new GetBalanceController();
+    const getBalance = async (tokenAddress: string) => {
+      const balances = JSON.parse(await balanceController.getBalance());
+      const tokenBalance = balances.find(b => b.mint === tokenAddress);
+      return tokenBalance ? tokenBalance.uiAmount : '0';
+    };
+
+    const inputTokenBefore = await getBalance(inputToken.address);
+    const outputTokenBefore = await getBalance(outputToken.address);
+
     const tx = await whirlpool.swap(quote);
     const signature = await tx.buildAndExecute();
     console.log("signature:", signature);
 
     const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
-    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
+    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, commitment);
 
-    return { signature };
+    const inputTokenAfter = await getBalance(inputToken.address);
+    const outputTokenAfter = await getBalance(outputToken.address);
+
+    return { 
+      signature,
+      inputTokenBefore: `${inputTokenSymbol} (before swap): ${inputTokenBefore}`,
+      inputTokenAfter: `${inputTokenSymbol} (after swap): ${inputTokenAfter}`,
+      outputTokenBefore: `${outputTokenSymbol} (before swap): ${outputTokenBefore}`,
+      outputTokenAfter: `${outputTokenSymbol} (after swap): ${outputTokenAfter}`
+    };
   }
 }
 
@@ -75,28 +108,38 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
       tags: [folderName],
       description: 'Execute a swap on Orca',
       body: Type.Object({
-        inputTokenAddress: Type.String(),
-        outputTokenAddress: Type.String(),
+        inputTokenSymbol: Type.String(),
+        outputTokenSymbol: Type.String(),
         amount: Type.Number(),
         tickSpacing: Type.Number({ default: 64 }),
         slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
+        commitment: Type.Optional(Type.Union([
+          Type.Literal('finalized'),
+          Type.Literal('confirmed'),
+          Type.Literal('processed')
+        ], { default: 'finalized' })),
       }),
       response: {
         200: Type.Object({
           signature: Type.String(),
+          inputTokenBefore: Type.String(),
+          inputTokenAfter: Type.String(),
+          outputTokenBefore: Type.String(),
+          outputTokenAfter: Type.String(),
         })
       }
     },
     handler: async (request, reply) => {
-      const { inputTokenAddress, outputTokenAddress, amount, tickSpacing, slippagePct } = request.body as {
-        inputTokenAddress: string;
-        outputTokenAddress: string;
+      const { inputTokenSymbol, outputTokenSymbol, amount, tickSpacing, slippagePct, commitment } = request.body as {
+        inputTokenSymbol: string;
+        outputTokenSymbol: string;
         amount: number;
         tickSpacing: number;
         slippagePct?: number;
+        commitment?: 'finalized' | 'confirmed' | 'processed';
       };
-      fastify.log.info(`Executing Orca swap from ${inputTokenAddress} to ${outputTokenAddress}`);
-      const result = await controller.executeSwap(inputTokenAddress, outputTokenAddress, amount, tickSpacing, slippagePct);
+      fastify.log.info(`Executing Orca swap from ${inputTokenSymbol} to ${outputTokenSymbol}`);
+      const result = await controller.executeSwap(inputTokenSymbol, outputTokenSymbol, amount, tickSpacing, slippagePct, commitment);
       return result;
     }
   });

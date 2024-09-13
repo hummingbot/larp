@@ -19,7 +19,7 @@ class OpenPositionController extends OrcaController {
     upperPrice: Decimal,
     quoteTokenAmount: number,
     slippagePct?: number
-  ): Promise<{ signature: string; positionMint: string }> {
+  ): Promise<{ signature: string; positionMint: string; positionAddress: string }> {
     await this.loadOrca();
 
     const solanaController = new SolanaController();
@@ -98,9 +98,13 @@ class OpenPositionController extends OrcaController {
     const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
     await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
 
+    // Fetch the newly created position
+    const positionAddress = PDAUtil.getPosition(ORCA_WHIRLPOOL_PROGRAM_ID, open_position_tx.positionMint).publicKey;
+
     return {
       signature,
       positionMint: open_position_tx.positionMint.toBase58(),
+      positionAddress: positionAddress.toBase58(),
     };
   }
 }
@@ -125,6 +129,7 @@ export default function openPositionRoute(fastify: FastifyInstance, folderName: 
         200: Type.Object({
           signature: Type.String(),
           positionMint: Type.String(),
+          positionAddress: Type.String(),
         })
       }
     },

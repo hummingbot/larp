@@ -18,7 +18,7 @@ const BalanceResponse = Type.Array(Type.Object({
   uiAmount: Type.String(),
 }));
 
-class GetBalanceController extends SolanaController {
+export class GetBalanceController extends SolanaController {
   private balanceResponseValidator = TypeCompiler.Compile(BalanceResponse);
 
   async getBalance(address?: string): Promise<string> {
