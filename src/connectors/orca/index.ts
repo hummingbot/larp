@@ -14,6 +14,7 @@ import collectFeeRewardsRoute from './routes/collectFeeRewards';
 import createPositionBundleRoute from './routes/createPositionBundle';
 import openPositionsInBundleRoute from './routes/openPositionsInBundle';
 import addLiquidityInBundleRoute from './routes/addLiquidityInBundle';
+import closePositionsInBundleRoute from './routes/closePositionsInBundle';
 import deletePositionBundleRoute from './routes/deletePositionBundle';
 import positionsOwnedRoute from './routes/getPositionsOwnedBy';
 
@@ -37,6 +38,7 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   createPositionBundleRoute(fastify, folderName);
   openPositionsInBundleRoute(fastify, folderName);
   addLiquidityInBundleRoute(fastify, folderName);
+  closePositionsInBundleRoute(fastify, folderName);
   deletePositionBundleRoute(fastify, folderName);
 };
 
