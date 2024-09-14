@@ -27,10 +27,13 @@ class GetPositionsInBundleController extends OrcaController {
       const bundled_position_pda = PDAUtil.getBundledPosition(this.ctx.program.programId, position_bundle.positionBundleMint, index);
       console.log(`bundled position ${index} pubkey:`, bundled_position_pda.publicKey.toBase58());
 
-      const position = await this.client.getPosition(bundled_position_pda.publicKey);
+      // Use IGNORE_CACHE when fetching the position
+      const position = await this.client.getPosition(bundled_position_pda.publicKey, IGNORE_CACHE);
       const data = position.getData();
 
-      const pool = await this.client.getPool(data.whirlpool);
+      // Use IGNORE_CACHE when fetching the pool
+      const pool = await this.client.getPool(data.whirlpool, IGNORE_CACHE);
+
       const token_a = pool.getTokenAInfo();
       const token_b = pool.getTokenBInfo();
       const price = PriceMath.sqrtPriceX64ToPrice(pool.getData().sqrtPrice, token_a.decimals, token_b.decimals);

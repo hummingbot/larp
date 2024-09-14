@@ -3,16 +3,16 @@ import { Type } from '@sinclair/typebox';
 import { PublicKey } from '@solana/web3.js';
 import {
   PDAUtil, PositionBundleUtil, IGNORE_CACHE,
-  increaseLiquidityQuoteByInputTokenWithParams, TokenExtensionUtil
+  decreaseLiquidityQuoteByLiquidityWithParams, TokenExtensionUtil
 } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil, Percentage, TransactionBuilder } from "@orca-so/common-sdk";
-import Decimal from "decimal.js";
+import { BN } from "bn.js";
 import { OrcaController } from '../orca.controller';
 
-class AddLiquidityInBundleController extends OrcaController {
-  async addLiquidityInBundle(
+class RemoveLiquidityInBundleController extends OrcaController {
+  async removeLiquidityInBundle(
     positionBundleAddress: string,
-    quoteTokenAmounts: number[],
+    percentages: number[],
     slippagePct?: number
   ): Promise<{ signature: string; liquiditiesBefore: string[]; liquiditiesAfter: string[] }> {
     await this.loadOrca();
@@ -25,7 +25,7 @@ class AddLiquidityInBundleController extends OrcaController {
 
     // Get the bundle indexes in use in PositionBundle
     const occupied_bundle_indexes = PositionBundleUtil.getOccupiedBundleIndexes(position_bundle);
-    console.log("occupied bundle indexes:", occupied_bundle_indexes.slice(0, Math.max(quoteTokenAmounts.length, 10)));
+    console.log("occupied bundle indexes:", occupied_bundle_indexes.slice(0, Math.max(percentages.length, 10)));
 
     const slippage = slippagePct
       ? Percentage.fromFraction(slippagePct * 100, 10000)
@@ -35,40 +35,40 @@ class AddLiquidityInBundleController extends OrcaController {
     const liquiditiesBefore: string[] = [];
     const positions: any[] = [];
 
-    for (let i = 0; i < quoteTokenAmounts.length; i++) {
+    for (let i = 0; i < percentages.length; i++) {
       const bundled_position_pda = PDAUtil.getBundledPosition(this.ctx.program.programId, position_bundle.positionBundleMint, occupied_bundle_indexes[i]);
       console.log(`bundled position ${i} pubkey:`, bundled_position_pda.publicKey.toBase58());
 
       const position = await this.client.getPosition(bundled_position_pda.publicKey);
       const whirlpool = await this.client.getPool(position.getData().whirlpool);
 
+      const liquidity = position.getData().liquidity;
+      const delta_liquidity = liquidity.mul(new BN(percentages[i])).div(new BN(100));
+
+    //   console.log(`Position ${i} - liquidity:`, liquidity.toString());
+    //   console.log(`Position ${i} - delta_liquidity:`, delta_liquidity.toString());
+    
+      const whirlpool_data = whirlpool.getData();
       const token_a = whirlpool.getTokenAInfo();
       const token_b = whirlpool.getTokenBInfo();
-
-      const quote_token_amount = DecimalUtil.toBN(new Decimal(quoteTokenAmounts[i].toString()), token_b.decimals);
-
-      const whirlpool_data = whirlpool.getData();
-      const quote = increaseLiquidityQuoteByInputTokenWithParams({
-        tokenMintA: token_a.mint,
-        tokenMintB: token_b.mint,
+      const quote = decreaseLiquidityQuoteByLiquidityWithParams({
         sqrtPrice: whirlpool_data.sqrtPrice,
         tickCurrentIndex: whirlpool_data.tickCurrentIndex,
         tickLowerIndex: position.getData().tickLowerIndex,
         tickUpperIndex: position.getData().tickUpperIndex,
-        inputTokenMint: token_b.mint,
-        inputTokenAmount: quote_token_amount,
+        liquidity: delta_liquidity,
         slippageTolerance: slippage,
         tokenExtensionCtx: await TokenExtensionUtil.buildTokenExtensionContext(this.ctx.fetcher, whirlpool_data),
       });
 
-      console.log(`Position ${i} - Token A max input:`, DecimalUtil.fromBN(quote.tokenMaxA, token_a.decimals).toFixed(token_a.decimals));
-      console.log(`Position ${i} - Token B max input:`, DecimalUtil.fromBN(quote.tokenMaxB, token_b.decimals).toFixed(token_b.decimals));
+      console.log(`Position ${i} - Token A min output:`, DecimalUtil.fromBN(quote.tokenMinA, token_a.decimals).toFixed(token_a.decimals));
+      console.log(`Position ${i} - Token B min output:`, DecimalUtil.fromBN(quote.tokenMinB, token_b.decimals).toFixed(token_b.decimals));
 
-      liquiditiesBefore.push(position.getData().liquidity.toString());
+      liquiditiesBefore.push(liquidity.toString());
       console.log(`Position ${i} - liquidity(before):`, liquiditiesBefore[i]);
 
-      const increase_liquidity_tx = await position.increaseLiquidity(quote);
-      tx_builder.addInstruction(increase_liquidity_tx.compressIx(true));
+      const decrease_liquidity_tx = await position.decreaseLiquidity(quote);
+      tx_builder.addInstruction(decrease_liquidity_tx.compressIx(true));
 
       positions.push(position);
     }
@@ -98,16 +98,16 @@ class AddLiquidityInBundleController extends OrcaController {
   }
 }
 
-export default function addLiquidityInBundleRoute(fastify: FastifyInstance, folderName: string) {
-  const controller = new AddLiquidityInBundleController();
+export default function removeLiquidityInBundleRoute(fastify: FastifyInstance, folderName: string) {
+  const controller = new RemoveLiquidityInBundleController();
 
-  fastify.post(`/${folderName}/add-liquidity-in-bundle`, {
+  fastify.post(`/${folderName}/remove-liquidity-in-bundle`, {
     schema: {
       tags: [folderName],
-      description: 'Add liquidity to multiple Orca positions in a bundle',
+      description: 'Remove liquidity from multiple Orca positions in a bundle',
       body: Type.Object({
         positionBundleAddress: Type.String(),
-        quoteTokenAmounts: Type.Array(Type.Number()),
+        percentages: Type.Array(Type.Number()),
         slippagePct: Type.Optional(Type.Number({ default: 1 })),
       }),
       response: {
@@ -119,15 +119,15 @@ export default function addLiquidityInBundleRoute(fastify: FastifyInstance, fold
       }
     },
     handler: async (request, reply) => {
-      const { positionBundleAddress, quoteTokenAmounts, slippagePct } = request.body as {
+      const { positionBundleAddress, percentages, slippagePct } = request.body as {
         positionBundleAddress: string;
-        quoteTokenAmounts: number[];
+        percentages: number[];
         slippagePct?: number;
       };
-      fastify.log.info(`Adding liquidity to Orca position bundle: ${positionBundleAddress}`);
-      const result = await controller.addLiquidityInBundle(
+      fastify.log.info(`Removing liquidity from Orca position bundle: ${positionBundleAddress}`);
+      const result = await controller.removeLiquidityInBundle(
         positionBundleAddress,
-        quoteTokenAmounts,
+        percentages,
         slippagePct
       );
       return result;
