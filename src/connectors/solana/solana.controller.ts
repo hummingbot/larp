@@ -124,7 +124,14 @@ export class SolanaController {
   }
 
   public getTokenList(): any {
-    return this.tokenList.content || [];
+    // Ensure the token list contains symbols
+    return this.tokenList.content.map(token => ({
+      address: token.address,
+      chainId: token.chainId,
+      name: token.name,
+      symbol: token.symbol,
+      decimals: token.decimals,
+    })) || [];
   }
 
   public async getTokenByAddress(tokenAddress: string, useApi: boolean = false): Promise<Token> {
