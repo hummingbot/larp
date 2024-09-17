@@ -38,7 +38,7 @@ server.register(fastifySwagger, {
       version: '0.0.1'
     },
     servers: [{
-      url: `http://localhost:${PORT}`
+      url: '/'
     }],
     tags: [
       { name: 'solana', description: 'Solana utility endpoints' },
@@ -59,9 +59,11 @@ server.register(fastifySwaggerUi, {
   routePrefix: '/docs',
   uiConfig: {
     docExpansion: 'list', // This makes tags collapsible
-    deepLinking: false
+    deepLinking: false,
+    tryItOutEnabled: true
   },
-  staticCSP: true
+  staticCSP: false,
+  transformStaticCSP: (header) => header,
 })
 
 // Register routes
