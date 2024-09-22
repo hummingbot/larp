@@ -9,7 +9,7 @@ import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 import { SolanaController } from '../../solana/solana.controller';
 
-class GetSwapQuoteController extends OrcaController {
+export class GetSwapQuoteController extends OrcaController {
   async getSwapQuote(
     inputTokenSymbol: string,
     outputTokenSymbol: string,
