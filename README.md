@@ -83,11 +83,16 @@ $ pnpm build
 $ pnpm link -g
 ```
 
-### Run `larp`
+## Using the CLI
+
+### See commands
 ```sh-session
 $ larp
+ _      __    ___   ___  
+| |    / /\  | |_) | |_) 
+|_|__ /_/--\ |_| \ |_| 
 
-A client for on-chain liquidity providers
+A CLI and API client for on-chain liquidity providers, maintained by Hummingbot.
 
 VERSION
   larp/0.0.1 darwin-arm64 node-v20.13.1
@@ -96,7 +101,11 @@ USAGE
   $ larp [COMMAND]
 ```
 
-## Using the CLI
+### Get help
+
+```sh-session
+$ larp help
+```
 
 ### Create wallet JSON
 
@@ -114,6 +123,12 @@ Starts a local REST API server at the PORT specified in `.env` (default `3000`).
 
 ```sh-session
 $ larp start
+ _      __    ___   ___  
+| |    / /\  | |_) | |_) 
+|_|__ /_/--\ |_| \ |_| 
+
+A CLI and API client for on-chain liquidity providers, maintained by Hummingbot.
+
 Starting larp server...
 ```
 
