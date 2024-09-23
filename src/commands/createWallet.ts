@@ -1,4 +1,4 @@
-import { Command, CliUx } from '@oclif/core'
+import { Command, ux } from '@oclif/core'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
@@ -39,7 +39,7 @@ export default class CreateWallet extends Command {
 		const controller = new CreateWalletController()
 
 		try {
-			const secretKey = await CliUx.ux.prompt('Enter your secret key (base58)', { type: 'hide' })
+			const secretKey = await ux.prompt('Enter your secret key (base58)', { type: 'hide' })
 			await controller.createWallet(secretKey)
 			this.log('Wallet created successfully!')
 		} catch (error) {
