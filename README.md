@@ -10,18 +10,15 @@ Similar to Hummingbot connectors, a `larp` connector standardizes common liquidi
 `larp` offers two primary modes of operation:
 
 1. [Command Line Interface (CLI)](#using-the-cli): 
-   - Provides direct access to various commands and utilities.
-   - Useful for operations like creating wallets, checking balances and portfolio status, and starting the API server.
+   - Commands for common liquidity provider operations on each connector.
+   - Useful for operations like creating wallets, fetching token info, and checking balances/portfolio.
    - Current commands: `larp createWallet`, `larp start`
-   - Coming soon: `larp balance`, `larp portfolio`
+   - Coming soon: `larp balance`, `larp token`, `larp portfolio`
 
 2. [REST API Server](#using-the-api-server):
-   - When started with `larp start`, it runs a server exposing standardized REST endpoints for operations on various AMMs and chains.
+   - Run a server exposing standardized REST API endpoints for operations on each connector.
    - Run automated LP and arbitrage strategies using the [Hummingbot client](https://github.com/hummingbot/hummingbot)
    - Perform research and visualize your strategies using [Hummingbot quants-lab](https://github.com/hummingbot/quants-lab)
-   - API documentation available at `http://localhost:3000/docs` when the server is running.
-
-This dual functionality allows users to interact with `larp` in a way that best suits their needs, whether through direct command-line operations or by integrating with the REST API in their applications.
 
 ## Maintainers
 
