@@ -17,7 +17,7 @@ Similar to Hummingbot exchange connectors, a `larp` connector standardizes LP op
    - Useful for operations like creating wallets, fetching token info, and checking balances/portfolio.
    - Current commands: `larp createWallet`, `larp start`
    - Coming soon: `larp balance`, `larp token`, `larp portfolio`
-   - Based on [Oclif](https://github.com/fastify/fastify), an open source framework for building a command line interfaces (CLI) in Typescript.
+   - Based on [Oclif](https://oclif.io/), an open source framework for building a command line interfaces (CLI) in Typescript.
 
 2. [REST API Server](#using-the-api-server):
    - Run a server exposing standardized REST API endpoints for operations on each connector.
