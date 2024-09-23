@@ -3,13 +3,12 @@
 | |    / /\  | |_) | |_) 
 |_|__ /_/--\ |_| \ |_| 
 ```
-=================
 
 A CLI and API client for on-chain liquidity providers, maintained by the [Hummingbot](https://github.com/hummingbot) community.
 
 `larp` standardizes operations with different Concentrated Liquidity Market Maker (CLMM), Automated Market Makers (AMM) and other DeFi protocols on different blockchains. 
 
-Similar to Hummingbot connectors, a `larp` connector standardizes common liquidity provider operations for a specific protocol. Each connector supports `larp` CLI commands and provides a set of standard REST endpoints when the server is running. Each connector has a dedicated [Maintainer](#maintainers) and housed in a folder inside [/connectors](/src/connectors).
+Similar to Hummingbot exchange connectors, a `larp` connector standardizes LP operations for a specific blockchain or DeFi protocol. Each connector supports `larp` CLI commands and provides a set of standard REST endpoints when the server is running. Each connector has a dedicated [Maintainer](#maintainers) and housed in a folder inside [/connectors](/src/connectors).
 
 `larp` offers two primary modes of operation:
 
