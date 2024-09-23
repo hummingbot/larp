@@ -11,6 +11,14 @@ import solanaRoutes from './connectors/solana';
 import orcaRoutes from './connectors/orca';
 import raydiumRoutes from './connectors/raydium';
 
+export const asciiLogo = `
+ _      __    ___   ___  
+| |    / /\\  | |_) | |_) 
+|_|__ /_/--\\ |_| \\ |_| 
+
+A CLI and API client for on-chain liquidity providers, maintained by Hummingbot.
+`;
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const SOLANA_NETWORK = process.env.SOLANA_NETWORK || 'mainnet-beta';
 

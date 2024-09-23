@@ -10,8 +10,8 @@ import { config } from 'dotenv';
 
 // Update the TOKEN_LIST_FILE constant
 const TOKEN_LIST_FILE = process.env.SOLANA_NETWORK === 'devnet' 
-  ? 'devnet-tokenlist.json' 
-  : 'solflare-tokenlist-20240912.json';
+  ? 'lists/devnet-tokenlist.json' 
+  : 'lists/solflare-tokenlist-20240912.json';
 
 export const SolanaAddressSchema = Type.String({
   pattern: '^[1-9A-HJ-NP-Za-km-z]{32,44}$',

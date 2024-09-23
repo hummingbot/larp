@@ -1,11 +1,12 @@
-import { Command } from '@oclif/core'
-import { startServer } from '../index'
+import { LogoCommand } from '../logo-command';
+import { startServer } from '../index';
 
-export default class Start extends Command {
-  static description = 'Start the larp server.'
+export default class Start extends LogoCommand {
+  static description = 'Start the larp server.';
 
   async run(): Promise<void> {
-    this.log('Starting larp server...')
-    await startServer()
+    this.log('Starting larp API server...');
+    await startServer();
   }
 }
+

@@ -3,8 +3,6 @@
 | |    / /\  | |_) | |_) 
 |_|__ /_/--\ |_| \ |_| 
 ```
-
-larp
 =================
 
 A CLI and API client for on-chain liquidity providers, maintained by the [Hummingbot](https://github.com/hummingbot) community.
@@ -30,7 +28,7 @@ Similar to Hummingbot connectors, a `larp` connector standardizes common liquidi
 
 `larp` is an community-driven project that will be transitioned to the [Hummingbot Foundation](https://github.com/hummingbot) as the successor to [Gateway](https://github.com/hummingbot/gateway) once it is more feature complete.
 
-Each connector within `larp` has a dedicated maintainer who commits to keeping it up-to-date with both larp and the underlying protocol. This community-driven approach allows us to leverage expertise across various protocols and blockchains, ensuring that `larp` remains a free, open-source tool for all liquidity providers.
+Each connector within `larp` has a dedicated maintainer who commits to keeping it up-to-date with both larp and the underlying protocol. This community-driven approach allows us to leverage expertise across various DeFi protocols and blockchains, ensuring that `larp` remains a free, open-source tool for the global liquidity provider community.
 
 Below is a list of current connectors and their maintainers:
 
@@ -41,6 +39,23 @@ Below is a list of current connectors and their maintainers:
 | [Orca](/src/connectors/orca) | CLMM | [fengtality](https://github.com/fengtality) |
 | [Raydium](/src/connectors/raydium) | AMM, CLMM | [fengtality](https://github.com/fengtality) |
 | [Meteora](/src/connectors/meteora) | CLMM | [mlguys](https://github.com/mlguys) |
+
+### For Prospective Maintainers
+
+Hummingbot Foundation only plans to maintain a small set of reference connectors of each type. We welcome interest from the community to maintain connectors for other protocols. 
+
+If you'd like to maintain a connector for a protocol not listed above, please open an [issue](https://github.com/hummingbot/larp/issues) and list your qualifications.
+
+## Connector Types
+
+Currently, `larp` supports connectors of the following standard types:
+
+- **Chain**: L1/L2 blockchain
+- **Aggregator**: Liquidity aggregator
+- **AMM**: Automated Market Maker (AMM) pools similar to Raydium Standard pools
+- **CLMM**: Concentrated Liquidity pools similar to Orca Whirlpool pools.
+
+Future support is planned for more connector types, such as other types of DEXs, lending protocools, staking providers, and cross-chain bridges.
 
 ## Installation
 
