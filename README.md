@@ -17,11 +17,13 @@ Similar to Hummingbot exchange connectors, a `larp` connector standardizes LP op
    - Useful for operations like creating wallets, fetching token info, and checking balances/portfolio.
    - Current commands: `larp createWallet`, `larp start`
    - Coming soon: `larp balance`, `larp token`, `larp portfolio`
+   - Based on [Oclif](https://oclif.io/)
 
 2. [REST API Server](#using-the-api-server):
    - Run a server exposing standardized REST API endpoints for operations on each connector.
    - Run automated LP and arbitrage strategies using the [Hummingbot client](https://github.com/hummingbot/hummingbot)
    - Perform research and visualize your strategies using [Hummingbot quants-lab](https://github.com/hummingbot/quants-lab)
+   - Based on [Fastify](https://fastify.dev/)
 
 ## Maintainers
 
