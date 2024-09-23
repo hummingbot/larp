@@ -33,7 +33,7 @@ class CreateWalletController {
 }
 
 export default class CreateWallet extends Command {
-	static description = 'Create a new wallet'
+	static description = 'Create a Solana wallet JSON file from private key'
 
 	async run(): Promise<void> {
 		const controller = new CreateWalletController()
