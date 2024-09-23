@@ -6,7 +6,7 @@
 
 `larp` is a Typescript-based CLI and API client for on-chain liquidity providers (LP), maintained by the [Hummingbot](https://github.com/hummingbot) community. The client standardizes common LP actions on decentralized exchanges (DEX) and other DeFi protocols across different blockchains.
 
-Similar to Hummingbot exchange connectors, a `larp` connector provides a standard interface for a DEX or other DeFi protocol. Each connector supports `larp` CLI commands and provides a set of standard REST endpoints when the server is running. Each connector has a dedicated [Maintainer](#maintainers) and housed in a folder inside [/connectors](/src/connectors).
+Similar to Hummingbot exchange connectors, a `larp` connector provides a shared, standardized interface for a DEX or other DeFi protocol. Each connector supports `larp` CLI commands and provides REST API endpoints when the server is running. Each connector has a dedicated [Maintainer](#maintainers) and housed in a folder inside [/connectors](/src/connectors).
 
 `larp` offers two primary modes of operation:
 
