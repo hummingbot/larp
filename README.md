@@ -3,9 +3,9 @@ larp
 
 A client for on-chain liquidity providers
 
-# Installation
+## Installation
 
-## Clone repository
+### Clone repository
 
 ```sh-session
 # Clone the repository
@@ -13,26 +13,26 @@ $ git clone https://github.com/fengtality/larp.git
 $ cd larp
 ```
 
-## Install dependencies
+### Install dependencies
 ```sh-session
 $ pnpm install
 ```
 
-## Build distribution files
+### Build distribution files
 ```sh-session
 $ pnpm build
 ```
 
-## Link `larp` command to global path
+### Link `larp` command to global path
 ```sh-session
 $ pnpm link -g
 ```
 
-## Run `larp`
+### Run `larp`
 ```sh-session
 $ larp
 
-minimal middleware for on-chain liquidity providers
+A client for on-chain liquidity providers
 
 VERSION
   larp/0.0.1 darwin-arm64 node-v20.13.1
@@ -44,16 +44,17 @@ TOPICS
   plugins  List installed plugins.
 
 COMMANDS
-  createWallet  Create a new wallet
+  createWallet  Create a Solana wallet JSON file from private key.
   help          Display help for larp.
   plugins       List installed plugins.
+  start         Start the larp server.
 ```
 
 # Setup
 
 ## Create wallet JSON
 ```sh-session
-$ larp create-wallet
+$ larp createWallet
 ```
 
 ## Confirm environment variables
@@ -75,8 +76,14 @@ $ larp balance
 ```
 
 ## Start server
-```
-$ pnpm start
+```sh-session
+$ larp start
+Starting larp server...
+Solana connector initialized:
+        - Network: devnet
+        - RPC URL: https://api.devnet.solana.com
+        - Wallet Public Key: <wallet_public_key>
+        - Token List: devnet-tokenlist.json
 ```
 
 ## View server docs

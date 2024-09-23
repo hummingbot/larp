@@ -1,7 +1,7 @@
 {
   "name": "larp",
   "version": "0.0.1",
-  "description": "minimal middleware for on-chain liquidity providers",
+  "description": "A client for on-chain liquidity providers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "fengtality",
@@ -53,7 +53,10 @@
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "postpack": "rm -f oclif.manifest.json",
+    "prepack": "rm -rf lib && tsc -b && oclif manifest && oclif readme",
+    "version": "oclif readme && git add README.md"
   },
   "oclif": {
     "bin": "larp",
@@ -67,6 +70,9 @@
     "topics": {
       "hello": {
         "description": "hello from hummingbot"
+      },
+      "start": {
+        "description": "Start the larp server."
       }
     }
   },

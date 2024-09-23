@@ -71,7 +71,7 @@ server.register(solanaRoutes);
 server.register(orcaRoutes);
 server.register(raydiumRoutes);
 
-const start = async (): Promise<void> => {
+export const startServer = async (): Promise<void> => {
   try {
     await server.listen({ port: PORT, host: '0.0.0.0' });
     server.log.info(`Server listening on http://localhost:${PORT}`);
@@ -80,5 +80,3 @@ const start = async (): Promise<void> => {
     process.exit(1);
   }
 };
-
-start();
