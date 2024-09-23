@@ -1,30 +1,33 @@
 larp
 =================
 
-A community-maintained client for on-chain liquidity providers.
+A CLI and API client for on-chain liquidity providers, maintained by the [Hummingbot](https://github.com/hummingbot) community.
 
-larp standardizes operations with AMMs and other DeFi protocols on various blockchains. Each connector provides a set of standardized REST API endpoints and commands for common operations for a specific protocol of a particular type.
+`larp` standardizes operations with different Concentrated Liquidity Market Maker (CLMM), Automated Market Makers (AMM) and other DeFi protocols on different blockchains. 
 
-larp offers two primary modes of operation:
+Similar to Hummingbot connectors, a `larp` connector standardizes common liquidity provider operations for a specific protocol. Each connector supports `larp` CLI commands and provides a set of standard REST endpoints when the server is running. Each connector has a dedicated [Maintainer](#maintainers) and housed in a folder inside [/connectors](/src/connectors).
 
-1. **Command Line Interface (CLI)**: 
+`larp` offers two primary modes of operation:
+
+1. [Command Line Interface (CLI)](#using-the-cli): 
    - Provides direct access to various commands and utilities.
-   - Useful for quick operations like creating wallets, checking balances, and starting the API server.
-   - Example commands: `larp createWallet`, `larp balance`, `larp start`
+   - Useful for operations like creating wallets, checking balances and portfolio status, and starting the API server.
+   - Current commands: `larp createWallet`, `larp start`
+   - Coming soon: `larp balance`, `larp portfolio`
 
-2. **REST API Server**:
+2. [REST API Server](#using-the-api-server):
    - When started with `larp start`, it runs a server exposing standardized REST endpoints for operations on various AMMs and chains.
    - Run automated LP and arbitrage strategies using the [Hummingbot client](https://github.com/hummingbot/hummingbot)
    - Perform research and visualize your strategies using [Hummingbot quants-lab](https://github.com/hummingbot/quants-lab)
    - API documentation available at `http://localhost:3000/docs` when the server is running.
 
-This dual functionality allows users to interact with larp in a way that best suits their needs, whether through direct command-line operations or by integrating with the REST API in their applications.
+This dual functionality allows users to interact with `larp` in a way that best suits their needs, whether through direct command-line operations or by integrating with the REST API in their applications.
 
 ## Maintainers
 
-larp is an community-driven project that will be transitioned to the [Hummingbot Foundation](https://github.com/hummingbot) as the successor to [Gateway](https://github.com/hummingbot/gateway) once it is more feature complete.
+`larp` is an community-driven project that will be transitioned to the [Hummingbot Foundation](https://github.com/hummingbot) as the successor to [Gateway](https://github.com/hummingbot/gateway) once it is more feature complete.
 
-Each connector within larp has a dedicated maintainer who commits to keeping it up-to-date with both larp and the underlying protocol. This community-driven approach allows us to leverage expertise across various protocols and blockchains, ensuring that larp remains a free, open-source tool for all liquidity providers.
+Each connector within `larp` has a dedicated maintainer who commits to keeping it up-to-date with both larp and the underlying protocol. This community-driven approach allows us to leverage expertise across various protocols and blockchains, ensuring that `larp` remains a free, open-source tool for all liquidity providers.
 
 Below is a list of current connectors and their maintainers:
 
@@ -32,9 +35,9 @@ Below is a list of current connectors and their maintainers:
 | --------- | ---- | ---------- |
 | [Solana](/src/connectors/solana) | Chain | [fengtality](https://github.com/fengtality) |
 | [Jupiter](/src/connectors/jupiter) | Aggregator | [fengtality](https://github.com/fengtality) |
-| [Orca](/src/connectors/orca) | AMM | [fengtality](https://github.com/fengtality) |
-| [Raydium](/src/connectors/raydium) | AMM | [fengtality](https://github.com/fengtality) |
-| [Meteora](/src/connectors/meteora) | AMM | [mlguys](https://github.com/mlguys) |
+| [Orca](/src/connectors/orca) | CLMM | [fengtality](https://github.com/fengtality) |
+| [Raydium](/src/connectors/raydium) | AMM, CLMM | [fengtality](https://github.com/fengtality) |
+| [Meteora](/src/connectors/meteora) | CLMM | [mlguys](https://github.com/mlguys) |
 
 ## Installation
 
@@ -72,25 +75,32 @@ VERSION
 
 USAGE
   $ larp [COMMAND]
-
-TOPICS
-  plugins  List installed plugins.
-
-COMMANDS
-  createWallet  Create a Solana wallet JSON file from private key.
-  help          Display help for larp.
-  plugins       List installed plugins.
-  start         Start the larp server.
 ```
 
-# Setup
+## Using the CLI
 
-## Create wallet JSON
+### Create wallet JSON
+
+Create a Solana wallet JSON file from a private key and save it in user's `/.larp/` configs folder.
+
 ```sh-session
 $ larp createWallet
+Enter your private key (base58): <private_key>
+Wallet created successfully!
 ```
 
-## Confirm environment variables
+## Start API server
+
+Starts a local REST API server at the PORT specified in `.env` (default `3000`).
+
+```sh-session
+$ larp start
+Starting larp server...
+```
+
+## Using the API Server
+
+First, ensure that you have a wallet JSON file in the root directory (see [Create wallet JSON](#create-wallet-json)).
 
 1. Rename `env.example` file in the root directory as `.env`.
 2. Modify the environment variables as needed.
@@ -101,14 +111,8 @@ SOLANA_NETWORK=mainnet-beta
 SOLANA_WALLET_JSON=wallet.json
 ```
 
-# Usage
+Next, start the API server by running `larp start`:
 
-## Get balance on Solana (WIP)
-```
-$ larp balance
-```
-
-## Start API server
 ```sh-session
 $ larp start
 Starting larp server...
@@ -119,26 +123,40 @@ Solana connector initialized:
         - Token List: devnet-tokenlist.json
 ```
 
-## View server docs
+### API Documentation
 
-See documentation for all routes at: [http://localhost:3000/docs](http://localhost:3000/docs).
+Run `larp start` to start the server, then navigate to [http://localhost:3000/docs](http://localhost:3000/docs) to view the API documentation and test the endpoints.
 
-# Contribute
+## Contribute
 
-Contributions are welcome! Please follow these steps:
+Currently, `larp` is still in the alpha stages of development. Once it is officially released, we will accept connector contributions from external maintainers.
 
-1. Fork the [repository](http://github.com/fengtality/larp)
-2. Create a folder connector following the [Orca](src/connectors/orca) folder and file structure
-3. Ensure that your connector meets the standard (WIP)
-4. Push your changes to your fork
-5. Submit a pull request with a detailed description of your changes
+In the meantime, we welcome you to fork the project and contribute by reporting/fixing bugs, adding documentation, and/or requesting features.
 
-For bug reports or feature requests, please open an [issue](http://github.com/fengtality/larp/issues) with a clear title and description.
+1. Fork the [repository](http://github.com/fengtality/larp).
+2. Report bugs or request features by opening a detailed [issue](http://github.com/fengtality/larp/issues).
+3. Submit bug and documentation fixes by opening a [pull request](https://github.com/fengtality/larp/pulls) with rationale for the changes you made.
 
 ## License
 
-This project is licensed under the MIT License.
+`larp` is licensed under the [MIT License](https://opensource.org/license/mit).
+
+Copyright 2024 Michael Feng
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

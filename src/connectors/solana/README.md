@@ -1,9 +1,11 @@
 # Solana Connector
 
-This connector enables operations with the Solana blockchain, wallet, tokens, and programs.
+This connector standardizes REST endpoints for liquidity provider-related operations with the Solana blockchain, wallets, accounts, and tokens.
 
 ## Maintainer
 
 [fengtality](https://github.com/fengtality)
 
-## Available Routes
+## Routes
+
+Coming soon.

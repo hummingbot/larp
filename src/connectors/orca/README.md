@@ -1,6 +1,6 @@
 # Orca Connector
 
-This connector standardizes REST endpoints for interacting with [Orca protocol](https://www.orca.so/), an AMM DEX on the Solana blockchain.
+This connector standardizes REST endpoints for interacting with [Orca](https://www.orca.so/), a Concentrated Liquidity (CLMM) DEX on the Solana blockchain.
 
 ## Maintainer
 
