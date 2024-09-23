@@ -1,7 +1,40 @@
 larp
 =================
 
-A client for on-chain liquidity providers
+A community-maintained client for on-chain liquidity providers.
+
+larp standardizes operations with AMMs and other DeFi protocols on various blockchains. Each connector provides a set of standardized REST API endpoints and commands for common operations for a specific protocol of a particular type.
+
+larp offers two primary modes of operation:
+
+1. **Command Line Interface (CLI)**: 
+   - Provides direct access to various commands and utilities.
+   - Useful for quick operations like creating wallets, checking balances, and starting the API server.
+   - Example commands: `larp createWallet`, `larp balance`, `larp start`
+
+2. **REST API Server**:
+   - When started with `larp start`, it runs a server exposing standardized REST endpoints for operations on various AMMs and chains.
+   - Run automated LP and arbitrage strategies using the [Hummingbot client](https://github.com/hummingbot/hummingbot)
+   - Perform research and visualize your strategies using [Hummingbot quants-lab](https://github.com/hummingbot/quants-lab)
+   - API documentation available at `http://localhost:3000/docs` when the server is running.
+
+This dual functionality allows users to interact with larp in a way that best suits their needs, whether through direct command-line operations or by integrating with the REST API in their applications.
+
+## Maintainers
+
+larp is an community-driven project that will be transitioned to the [Hummingbot Foundation](https://github.com/hummingbot) as the successor to [Gateway](https://github.com/hummingbot/gateway) once it is more feature complete.
+
+Each connector within larp has a dedicated maintainer who commits to keeping it up-to-date with both larp and the underlying protocol. This community-driven approach allows us to leverage expertise across various protocols and blockchains, ensuring that larp remains a free, open-source tool for all liquidity providers.
+
+Below is a list of current connectors and their maintainers:
+
+| Connector | Type | Maintainer |
+| --------- | ---- | ---------- |
+| [Solana](/src/connectors/solana) | Chain | [fengtality](https://github.com/fengtality) |
+| [Jupiter](/src/connectors/jupiter) | Aggregator | [fengtality](https://github.com/fengtality) |
+| [Orca](/src/connectors/orca) | AMM | [fengtality](https://github.com/fengtality) |
+| [Raydium](/src/connectors/raydium) | AMM | [fengtality](https://github.com/fengtality) |
+| [Meteora](/src/connectors/meteora) | AMM | [mlguys](https://github.com/mlguys) |
 
 ## Installation
 
@@ -75,7 +108,7 @@ SOLANA_WALLET_JSON=wallet.json
 $ larp balance
 ```
 
-## Start server
+## Start API server
 ```sh-session
 $ larp start
 Starting larp server...
