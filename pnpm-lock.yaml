@@ -17,6 +17,9 @@ importers:
       '@fastify/type-provider-typebox':
         specifier: ^4.1.0
         version: 4.1.0(@sinclair/typebox@0.33.7)
+      '@jup-ag/api':
+        specifier: ^6.0.29
+        version: 6.0.29
       '@oclif/core':
         specifier: ^2.8.0
         version: 2.16.0(@types/node@18.19.50)(typescript@5.5.4)
@@ -62,6 +65,9 @@ importers:
       pino-pretty:
         specifier: ^11.2.2
         version: 11.2.2
+      promise-retry:
+        specifier: ^2.0.1
+        version: 2.0.1
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -500,6 +506,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
+
+  '@jup-ag/api@6.0.29':
+    resolution: {integrity: sha512-1gUY1txmL/gG14VDZMjeKVqhSzeg4L2cImdC7dGLYB5DP5D5lwpR+FarvhqehEi+63/RWOUKTTU4fablGpeIUQ==}
 
   '@lukeed/ms@2.0.2':
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
@@ -5342,6 +5351,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@jup-ag/api@6.0.29': {}
 
   '@lukeed/ms@2.0.2': {}
 

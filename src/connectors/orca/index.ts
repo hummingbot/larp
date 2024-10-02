@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
 import getPositionInfoRoute from './routes/getPositionInfo';
 import getFeesQuoteRoute from './routes/getFeesQuote';
-import getSwapQuoteRoute from './routes/getSwapQuote';
+import getSwapQuoteRoute from './routes/quoteSwap';
 import executeSwapRoute from './routes/executeSwap';
 import openPositionRoute from './routes/openPosition';
 import closePositionRoute from './routes/closePosition';
