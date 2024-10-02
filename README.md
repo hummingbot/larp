@@ -73,6 +73,8 @@ $ cd larp
 $ pnpm install
 ```
 
+>Note: We use `pnpm`, a faster and more efficient alternative to `npm`, to install the dependencies. To install `pnpm` globally, run `npm install -g pnpm`.
+
 ### Build distribution files
 ```sh-session
 $ pnpm build
@@ -80,8 +82,17 @@ $ pnpm build
 
 ### Link `larp` command to global path
 ```sh-session
-$ pnpm link -g
+$ pnpm link
 ```
+
+>Note: If you get an error saying that the `larp` command is not found, try adding the following to your `.zshrc` or `.bashrc`:
+
+```sh-session
+export PATH="$PATH:$HOME/Library/pnpm/global/5/node_modules/.bin"
+```
+
+Afterwards, runn `pnpm unlink -g` to remove the global link and try the `pnpm link` command again.
+
 
 ## Using the CLI
 

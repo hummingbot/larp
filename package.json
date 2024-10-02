@@ -25,11 +25,14 @@
     "fastify": "^4.28.1",
     "fastify-type-provider-zod": "^2.0.0",
     "pino-pretty": "^11.2.2",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@orca-so/common-sdk": "^0.6.3",
+    "@orca-so/whirlpools-sdk": "^0.13.5",
+    "bn.js": "^5.2.1",
+    "decimal.js": "^10.4.3"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "^0.29.0",
-    "@orca-so/whirlpools-sdk": "^0.13.5",
     "@solana/web3.js": "^1.95.3",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^8.2.0",
@@ -44,7 +47,8 @@
     "prettier": "^3.3.3",
     "ts-node": "^10.9.1",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^8.2.0"
+    "typescript-eslint": "^8.2.0",
+    "@types/bn.js": "^5.1.1"
   },
   "scripts": {
     "build": "tsc && ts-node scripts/copy-lists.ts",
@@ -56,7 +60,9 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif manifest && oclif readme",
-    "version": "oclif readme && git add README.md"
+    "version": "oclif readme && git add README.md",
+    "prelink": "pnpm run build",
+    "link": "pnpm link -g"
   },
   "oclif": {
     "bin": "larp",
