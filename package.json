@@ -53,8 +53,8 @@
     "typescript-eslint": "^8.2.0"
   },
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "start": "START_SERVER=true ts-node src/index.ts",
+    "dev": "START_SERVER=true nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "build": "tsc",
     "serve": "node dist/index.js",
     "lint": "eslint .",

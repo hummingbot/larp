@@ -16,8 +16,7 @@ class ExecuteSwapController extends OrcaController {
     outputTokenSymbol: string,
     amount: number,
     tickSpacing: number,
-    slippagePct?: number,
-    commitment: 'finalized' | 'confirmed' | 'processed' = 'processed'
+    slippagePct?: number
   ): Promise<{ 
     signature: string;
     inputTokenBefore: string;
@@ -85,7 +84,7 @@ class ExecuteSwapController extends OrcaController {
     console.log("signature:", signature);
 
     const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
-    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, commitment);
+    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, 'processed');
 
     const inputTokenAfter = await getBalance(inputToken.address);
     const outputTokenAfter = await getBalance(outputToken.address);
@@ -113,11 +112,6 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
         amount: Type.Number(),
         tickSpacing: Type.Number({ default: 64 }),
         slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
-        commitment: Type.Optional(Type.Union([
-          Type.Literal('finalized'),
-          Type.Literal('confirmed'),
-          Type.Literal('processed')
-        ], { default: 'finalized' })),
       }),
       response: {
         200: Type.Object({
@@ -130,16 +124,15 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
       }
     },
     handler: async (request, reply) => {
-      const { inputTokenSymbol, outputTokenSymbol, amount, tickSpacing, slippagePct, commitment } = request.body as {
+      const { inputTokenSymbol, outputTokenSymbol, amount, tickSpacing, slippagePct } = request.body as {
         inputTokenSymbol: string;
         outputTokenSymbol: string;
         amount: number;
         tickSpacing: number;
         slippagePct?: number;
-        commitment?: 'finalized' | 'confirmed' | 'processed';
       };
       fastify.log.info(`Executing Orca swap from ${inputTokenSymbol} to ${outputTokenSymbol}`);
-      const result = await controller.executeSwap(inputTokenSymbol, outputTokenSymbol, amount, tickSpacing, slippagePct, commitment);
+      const result = await controller.executeSwap(inputTokenSymbol, outputTokenSymbol, amount, tickSpacing, slippagePct);
       return result;
     }
   });

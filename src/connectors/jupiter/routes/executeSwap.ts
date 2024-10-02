@@ -94,7 +94,7 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
         inputTokenSymbol: Type.String(),
         outputTokenSymbol: Type.String(),
         amount: Type.Number(),
-        slippagePct: Type.Optional(Type.Number({ default: 0.5, minimum: 0, maximum: 100 })),
+        slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
       }),
       response: {
         200: Type.Object({

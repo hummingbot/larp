@@ -51,7 +51,7 @@ export class SolanaController {
     this.tokenInfoValidator = TypeCompiler.Compile(TokenInfoResponse);
 
     // Log once only if the server is running
-    if (!SolanaController.solanaLogged && process.env.SERVER_RUNNING === 'true') {
+    if (!SolanaController.solanaLogged && process.env.START_SERVER === 'true') {
       console.log(`Solana connector initialized:
         - Network: ${this.network}
         - RPC URL: ${rpcUrl}
