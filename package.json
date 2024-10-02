@@ -51,10 +51,10 @@
     "@types/bn.js": "^5.1.1"
   },
   "scripts": {
-    "build": "tsc && ts-node scripts/copy-lists.ts",
-    "start": "ts-node src/index.ts",
-    "start:prod": "node dist/index.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
+    "start": "ts-node src/cli.ts start-server",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/cli.ts start-server",
+    "build": "tsc",
+    "serve": "node dist/cli.js start-server",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -79,6 +79,9 @@
       },
       "start": {
         "description": "Start the larp server."
+      },
+      "balance": {
+        "description": "Get token balances for a Solana wallet"
       }
     }
   },

@@ -21,13 +21,27 @@ const BalanceResponse = Type.Array(Type.Object({
 export class GetBalanceController extends SolanaController {
   private balanceResponseValidator = TypeCompiler.Compile(BalanceResponse);
 
-  async getBalance(address?: string): Promise<string> {
+  async getBalance(address?: string, symbols?: string[]): Promise<string> {
     const publicKey = address ? new PublicKey(address) : new PublicKey(this.getWallet().publicKey);
+
+    const tokenAccounts = [];
+
+    // Fetch SOL balance only if symbols is undefined or includes "SOL"
+    if (!symbols || symbols.includes("SOL")) {
+      const solBalance = await this.connection.getBalance(publicKey);
+      tokenAccounts.push({
+        mint: "SOL", // Use "SOL" as the mint address for native SOL
+        name: "SOL",
+        uiAmount: (solBalance / 1e9).toString(), // Convert lamports to SOL
+      });
+    }
 
     // Fetch the token list
     const tokenList = this.getTokenList();
     const tokenDefs = tokenList.reduce((acc, token) => {
-      acc[token.address] = { name: token.symbol, decimals: token.decimals };
+      if (!symbols || symbols.includes(token.symbol)) {
+        acc[token.address] = { name: token.symbol, decimals: token.decimals };
+      }
       return acc;
     }, {});
 
@@ -37,7 +51,6 @@ export class GetBalanceController extends SolanaController {
       { programId: TOKEN_PROGRAM_ID }
     );
 
-    const tokenAccounts = [];
     // loop through all the token accounts and fetch the requested tokens
     for (const value of accounts.value) {
       const parsedTokenAccount = unpackAccount(value.pubkey, value.account);
@@ -50,10 +63,8 @@ export class GetBalanceController extends SolanaController {
 
       // push requested tokens' info to the tokenAccounts array
       tokenAccounts.push({
-        // tokenAccount: value.pubkey.toBase58(),
         mint: mint.toBase58(),
         name: tokenDef.name,
-        // amount: amount.toString(),
         uiAmount: uiAmount.toString(),
       });
     }
@@ -71,12 +82,13 @@ export class GetBalanceController extends SolanaController {
 export default function getBalanceRoute(fastify: FastifyInstance, folderName: string) {
     const controller = new GetBalanceController();
   
-    fastify.get(`/${folderName}/balances`, {
+    fastify.get(`/${folderName}/balance`, {
       schema: {
         tags: [folderName],
         description: 'Get token balances for the specified wallet address or the user\'s wallet if not provided',
         querystring: Type.Object({
-          address: Type.Optional(SolanaAddressSchema)
+          address: Type.Optional(SolanaAddressSchema),
+          symbols: Type.Optional(Type.Array(Type.String(), { default: ["SOL"] }))
         }),
         response: {
           200: BalanceResponse,
@@ -84,10 +96,10 @@ export default function getBalanceRoute(fastify: FastifyInstance, folderName: st
         }
       },
       handler: async (request, reply) => {
-        const { address } = request.query as { address?: string };
+        const { address, symbols } = request.query as { address?: string; symbols?: string[] };
         fastify.log.info(`Getting token balances for address: ${address || 'user wallet'}`);
         try {
-          const result = await controller.getBalance(address);
+          const result = await controller.getBalance(address, symbols);
           return result;
         } catch (error) {
           fastify.log.error(error);

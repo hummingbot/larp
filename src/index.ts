@@ -88,3 +88,5 @@ export const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 };
+
+export default server;
