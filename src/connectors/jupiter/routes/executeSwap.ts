@@ -29,12 +29,12 @@ export class ExecuteSwapController extends JupiterController {
     inputTokenSymbol: string,
     outputTokenSymbol: string,
     amount: number,
-    slippageBps?: number
+    slippagePct?: number
   ): Promise<{ signature: string; transactionResponse: any }> {
     await this.loadJupiter();
     
     const quoteController = new GetSwapQuoteController();
-    const quote = await quoteController.getQuote(inputTokenSymbol, outputTokenSymbol, amount, slippageBps);
+    const quote = await quoteController.getQuote(inputTokenSymbol, outputTokenSymbol, amount, slippagePct);
     
     console.log("Wallet:", this.wallet.publicKey.toBase58());
 
@@ -94,7 +94,7 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
         inputTokenSymbol: Type.String(),
         outputTokenSymbol: Type.String(),
         amount: Type.Number(),
-        slippageBps: Type.Optional(Type.Number({ default: 50, minimum: 0, maximum: 10000 })),
+        slippagePct: Type.Optional(Type.Number({ default: 0.5, minimum: 0, maximum: 100 })),
       }),
       response: {
         200: Type.Object({
@@ -104,14 +104,14 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
       }
     },
     handler: async (request, reply) => {
-      const { inputTokenSymbol, outputTokenSymbol, amount, slippageBps } = request.body as {
+      const { inputTokenSymbol, outputTokenSymbol, amount, slippagePct } = request.body as {
         inputTokenSymbol: string;
         outputTokenSymbol: string;
         amount: number;
-        slippageBps?: number;
+        slippagePct?: number;
       };
       fastify.log.info(`Executing Jupiter swap from ${inputTokenSymbol} to ${outputTokenSymbol}`);
-      const result = await controller.executeSwap(inputTokenSymbol, outputTokenSymbol, amount, slippageBps);
+      const result = await controller.executeSwap(inputTokenSymbol, outputTokenSymbol, amount, slippagePct);
       return result;
     }
   });

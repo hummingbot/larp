@@ -1,7 +1,7 @@
 {
   "name": "larp",
   "version": "0.0.1",
-  "description": "CLI and API client for on-chain liquidity providers, maintained by Hummingbot",
+  "description": "larp is a CLI/API client for on-chain liquidity providers",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "fengtality",
@@ -53,10 +53,10 @@
     "typescript-eslint": "^8.2.0"
   },
   "scripts": {
-    "start": "ts-node src/cli.ts start-server",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/cli.ts start-server",
+    "start": "ts-node src/index.ts",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
     "build": "tsc",
-    "serve": "node dist/cli.js start-server",
+    "serve": "node dist/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.ts\"",

@@ -17,7 +17,7 @@ class ExecuteSwapController extends OrcaController {
     amount: number,
     tickSpacing: number,
     slippagePct?: number,
-    commitment: 'finalized' | 'confirmed' | 'processed' = 'finalized'
+    commitment: 'finalized' | 'confirmed' | 'processed' = 'processed'
   ): Promise<{ 
     signature: string;
     inputTokenBefore: string;

@@ -17,13 +17,15 @@ export const asciiLogo = `
 | |    / /\\  | |_) | |_) 
 |_|__ /_/--\\ |_| \\ |_| 
 
-A CLI and API client for on-chain liquidity providers, maintained by Hummingbot.
+larp is a CLI/API client for on-chain liquidity providers
 `;
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const SOLANA_NETWORK = process.env.SOLANA_NETWORK || 'mainnet-beta';
 
-const server = Fastify({
+// Move the server configuration into a function
+const configureServer = () => {
+  const server = Fastify({
     logger: {
       level: 'info',
       transport: {
@@ -34,61 +36,66 @@ const server = Fastify({
         },
       },
     }
-});
+  });
 
-// Register Swagger
-server.withTypeProvider<TypeBoxTypeProvider>()
+  // Register Swagger
+  server.withTypeProvider<TypeBoxTypeProvider>()
 
-server.register(fastifySwagger, {
-  openapi: {
-    info: {
-      title: 'larp',
-      description: 'minimal middleware for on-chain liquidity providers',
-      version: '0.0.1'
+  server.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: 'larp',
+        description: 'minimal middleware for on-chain liquidity providers',
+        version: '0.0.1'
+      },
+      servers: [{
+        url: '/'
+      }],
+      tags: [
+        { name: 'solana', description: 'Solana utility endpoints' },
+        { name: 'orca', description: 'Orca LP endpoints' },
+        { name: 'raydium', description: 'Raydium LP endpoints' }
+        // Add more tags for other connectors as needed
+      ]
     },
-    servers: [{
-      url: '/'
-    }],
-    tags: [
-      { name: 'solana', description: 'Solana utility endpoints' },
-      { name: 'orca', description: 'Orca LP endpoints' },
-      { name: 'raydium', description: 'Raydium LP endpoints' }
-      // Add more tags for other connectors as needed
-    ]
-  },
-  transform: ({ schema, url }) => {
-    return {
-      schema: Type.Strict(schema as any),
-      url: url
+    transform: ({ schema, url }) => {
+      return {
+        schema: Type.Strict(schema as any),
+        url: url
+      }
     }
-  }
-})
+  })
 
-server.register(fastifySwaggerUi, {
-  routePrefix: '/docs',
-  uiConfig: {
-    docExpansion: 'list', // This makes tags collapsible
-    deepLinking: false,
-    tryItOutEnabled: true
-  },
-  staticCSP: false,
-  transformStaticCSP: (header) => header,
-})
+  server.register(fastifySwaggerUi, {
+    routePrefix: '/docs',
+    uiConfig: {
+      docExpansion: 'list', // This makes tags collapsible
+      deepLinking: false,
+      tryItOutEnabled: true
+    },
+    staticCSP: false,
+    transformStaticCSP: (header) => header,
+  })
 
-// Register routes
-server.register(solanaRoutes);
-server.register(jupiterRoutes);
-server.register(orcaRoutes);
-server.register(raydiumRoutes);
+  // Register routes
+  server.register(solanaRoutes);
+  server.register(jupiterRoutes);
+  server.register(orcaRoutes);
+  server.register(raydiumRoutes);
+
+  return server;
+};
 
 export const startServer = async (): Promise<void> => {
+  const server = configureServer();
   try {
     await server.listen({ port: PORT, host: '0.0.0.0' });
     server.log.info(`Server listening on http://localhost:${PORT}`);
+    process.env.SERVER_RUNNING = 'true';
   } catch (err) {
     server.log.error(err);
     process.exit(1);
   }
 };
 
-export default server;
+export { configureServer };
