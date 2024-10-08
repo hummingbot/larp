@@ -42,7 +42,7 @@ export class GetSwapQuoteController extends OrcaController {
 
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
-      this.DEVNET_WHIRLPOOLS_CONFIG,
+      this.WHIRLPOOL_CONFIG_ADDRESS,
       new PublicKey(mintX),
       new PublicKey(mintY),
       tick_spacing

@@ -49,7 +49,7 @@ export class ExecuteSwapController extends JupiterController {
     const { value: simulatedTransactionResponse } =
       await this.connection.simulateTransaction(transaction, {
         replaceRecentBlockhash: true,
-        commitment: "processed",
+        commitment: "confirmed",
       });
     const { err, logs } = simulatedTransactionResponse;
 

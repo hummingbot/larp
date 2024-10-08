@@ -45,7 +45,7 @@ class ExecuteSwapController extends OrcaController {
 
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
-      this.DEVNET_WHIRLPOOLS_CONFIG,
+      this.WHIRLPOOL_CONFIG_ADDRESS,
       new PublicKey(mintX),
       new PublicKey(mintY),
       tick_spacing
@@ -84,7 +84,7 @@ class ExecuteSwapController extends OrcaController {
     console.log("signature:", signature);
 
     const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
-    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, 'processed');
+    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, 'finalized');
 
     const inputTokenAfter = await getBalance(inputToken.address);
     const outputTokenAfter = await getBalance(outputToken.address);

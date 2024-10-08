@@ -33,7 +33,7 @@ class OpenPositionController extends OrcaController {
     // Get devSAMO/devUSDC whirlpool
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
-      this.DEVNET_WHIRLPOOLS_CONFIG,
+      this.WHIRLPOOL_CONFIG_ADDRESS,
       new PublicKey(baseToken.address),
       new PublicKey(quoteToken.address),
       tickSpacing

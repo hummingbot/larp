@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { PublicKey } from '@solana/web3.js';
 import {
   PDAUtil, PriceMath, ORCA_WHIRLPOOL_PROGRAM_ID,
-  PositionBundleUtil, WhirlpoolIx
+  PositionBundleUtil, WhirlpoolIx, IGNORE_CACHE
 } from "@orca-so/whirlpools-sdk";
 import { TransactionBuilder } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
@@ -34,7 +34,7 @@ class OpenPositionsInBundleController extends OrcaController {
     // Get whirlpool
     const whirlpool_pubkey = PDAUtil.getWhirlpool(
       ORCA_WHIRLPOOL_PROGRAM_ID,
-      this.DEVNET_WHIRLPOOLS_CONFIG,
+      this.WHIRLPOOL_CONFIG_ADDRESS,
       new PublicKey(baseToken.address),
       new PublicKey(quoteToken.address),
       tickSpacing
@@ -61,7 +61,7 @@ class OpenPositionsInBundleController extends OrcaController {
 
     // Get PositionBundle account
     const position_bundle_pubkey = new PublicKey(positionBundleAddress);
-    const position_bundle = await this.ctx.fetcher.getPositionBundle(position_bundle_pubkey);
+    const position_bundle = await this.ctx.fetcher.getPositionBundle(position_bundle_pubkey, IGNORE_CACHE);
 
     // Get ATA for PositionBundle
     const position_bundle_token_account = getAssociatedTokenAddressSync(position_bundle.positionBundleMint, this.ctx.wallet.publicKey);

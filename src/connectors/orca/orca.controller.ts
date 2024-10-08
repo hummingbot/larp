@@ -9,7 +9,7 @@ export class OrcaController extends SolanaController {
   protected ctx: WhirlpoolContext;
   protected client: WhirlpoolClient;
   private static orcaLogged: boolean = false;
-  protected DEVNET_WHIRLPOOLS_CONFIG = new PublicKey("FcrweFY1G9HJAHG5inkGB6pKg1HZ6x9UC2WioAfWrGkR");
+  protected WHIRLPOOL_CONFIG_ADDRESS: PublicKey;
 
   constructor() {
     super();
@@ -17,6 +17,10 @@ export class OrcaController extends SolanaController {
     const provider = new AnchorProvider(this.connection, wallet, {
       commitment: "processed",
     });
+
+    this.WHIRLPOOL_CONFIG_ADDRESS = this.network === 'devnet'
+      ? new PublicKey("FcrweFY1G9HJAHG5inkGB6pKg1HZ6x9UC2WioAfWrGkR")
+      : new PublicKey("2LecshUwdy9xi7meFgHtFJQNSKk4KdTrcpvaB56dP2NQ");
 
     this.ctx = WhirlpoolContext.withProvider(provider, ORCA_WHIRLPOOL_PROGRAM_ID);
     this.loadOrca();
