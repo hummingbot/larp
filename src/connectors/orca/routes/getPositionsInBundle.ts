@@ -10,7 +10,7 @@ import { PositionInfoResponse } from './getPositionInfo';
 class GetPositionsInBundleController extends OrcaController {
   private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponse);
 
-  async getPositionsInBundle(positionBundleAddress: string): Promise<string> {
+  async getPositionsInBundle(positionBundleAddress: string): Promise<typeof PositionInfoResponse.static[]> {
     await this.loadOrca();
 
     const position_bundle_pubkey = new PublicKey(positionBundleAddress);
@@ -75,7 +75,7 @@ class GetPositionsInBundleController extends OrcaController {
       return positionInfo;
     }));
 
-    return JSON.stringify(positionInfos);
+    return positionInfos; // Return the array directly, not stringified
   }
 }
 
@@ -97,8 +97,17 @@ export default function getPositionsInBundleRoute(fastify: FastifyInstance, fold
       const { positionBundleAddress } = request.params as { positionBundleAddress: string };
       fastify.log.info(`Getting Orca positions for bundle address: ${positionBundleAddress}`);
       
-      const positionsInfo = await controller.getPositionsInBundle(positionBundleAddress);
-      return positionsInfo;
+      try {
+        const positionsInfo = await controller.getPositionsInBundle(positionBundleAddress);
+        reply.send(positionsInfo); // Use reply.send() to let Fastify handle the serialization
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'An error occurred while fetching positions in bundle'
+        });
+      }
     }
   });
 }
