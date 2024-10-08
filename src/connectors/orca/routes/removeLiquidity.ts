@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
 import { PublicKey } from '@solana/web3.js';
-import { BN } from "@coral-xyz/anchor";
+import { BN } from "bn.js";
 import {
   decreaseLiquidityQuoteByLiquidityWithParams,
   TokenExtensionUtil

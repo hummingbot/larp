@@ -3,7 +3,7 @@ import { Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 import { PublicKey } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID, unpackAccount } from "@solana/spl-token";  
-import { BN } from "@coral-xyz/anchor";
+import { BN } from "bn.js";
 import { PDAUtil, IGNORE_CACHE, PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
