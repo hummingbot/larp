@@ -1,8 +1,10 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
+import getPoolInfoRoute from './routes/getPoolInfo';
 import getPositionInfoRoute from './routes/getPositionInfo';
 import getFeesQuoteRoute from './routes/getFeesQuote';
 import getSwapQuoteRoute from './routes/quoteSwap';
+import getPositionsInBundleRoute from './routes/getPositionsInBundle';
 import executeSwapRoute from './routes/executeSwap';
 import openPositionRoute from './routes/openPosition';
 import closePositionRoute from './routes/closePosition';
@@ -10,7 +12,6 @@ import getAddLiquidityQuoteRoute from './routes/addLiquidityQuote';
 import addLiquidityRoute from './routes/addLiquidity';
 import removeLiquidityRoute from './routes/removeLiquidity';
 import collectFeesRoute from './routes/collectFees';
-import getPositionsInBundleRoute from './routes/getPositionsInBundle';
 import collectFeeRewardsRoute from './routes/collectFeeRewards';
 import createPositionBundleRoute from './routes/createPositionBundle';
 import openPositionsInBundleRoute from './routes/openPositionsInBundle';
@@ -26,9 +27,11 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
 
   // Register individual routes
   positionsOwnedRoute(fastify, folderName);
+  getPoolInfoRoute(fastify, folderName);
   getPositionInfoRoute(fastify, folderName);
   getFeesQuoteRoute(fastify, folderName);
   getSwapQuoteRoute(fastify, folderName);
+  getPositionsInBundleRoute(fastify, folderName);
   executeSwapRoute(fastify, folderName);
   openPositionRoute(fastify, folderName);
   closePositionRoute(fastify, folderName);
@@ -36,7 +39,6 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   addLiquidityRoute(fastify, folderName);
   removeLiquidityRoute(fastify, folderName);
   collectFeesRoute(fastify, folderName);
-  getPositionsInBundleRoute(fastify, folderName);
   collectFeeRewardsRoute(fastify, folderName);
   createPositionBundleRoute(fastify, folderName);
   openPositionsInBundleRoute(fastify, folderName);

@@ -1,6 +1,13 @@
 {
   "content": [
     {
+      "address": "So11111111111111111111111111111111111111112",
+      "chainId": 101,
+      "name": "Wrapped Solana",
+      "symbol": "SOL",
+      "decimals": 9
+    },
+    {
       "address": "BRjpCHtyQLNCo8gqRUr8jtdAj5AjPYQaoqbvcZiHok1k",
       "chainId": 103,
       "name": "devUSDC",
