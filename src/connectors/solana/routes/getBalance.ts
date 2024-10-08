@@ -26,8 +26,11 @@ export class GetBalanceController extends SolanaController {
 
     const tokenAccounts = [];
 
-    // Fetch SOL balance only if symbols is undefined or includes "SOL"
-    if (!symbols || symbols.includes("SOL")) {
+    // Convert symbols to uppercase for case-insensitive matching
+    const upperCaseSymbols = symbols?.map(s => s.toUpperCase());
+
+    // Fetch SOL balance only if symbols is undefined or includes "SOL" (case-insensitive)
+    if (!upperCaseSymbols || upperCaseSymbols.includes("SOL")) {
       const solBalance = await this.connection.getBalance(publicKey);
       tokenAccounts.push({
         address: "11111111111111111111111111111111",
@@ -39,7 +42,7 @@ export class GetBalanceController extends SolanaController {
     // Fetch the token list
     const tokenList = this.getTokenList();
     const tokenDefs = tokenList.reduce((acc, token) => {
-      if (!symbols || symbols.includes(token.symbol)) {
+      if (!upperCaseSymbols || upperCaseSymbols.includes(token.symbol.toUpperCase())) {
         acc[token.address] = { name: token.symbol, decimals: token.decimals };
       }
       return acc;
