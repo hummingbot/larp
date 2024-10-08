@@ -6,6 +6,11 @@ This connector standardizes REST endpoints for interacting with [Orca](https://w
 
 [fengtality](https://github.com/fengtality)
 
+## Faucet
+
+On devnet, you can request SOL and tokens from the Orca faucet at <https://everlastingsong.github.io/nebula/>.
+
+
 ## Routes
 
 GET /{folderName}/positions-owned

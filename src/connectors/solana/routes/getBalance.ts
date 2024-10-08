@@ -13,15 +13,15 @@ import {
 
 // Update the BalanceResponse schema
 const BalanceResponse = Type.Array(Type.Object({
-  mint: Type.String(),
-  name: Type.String(),
-  uiAmount: Type.String(),
+  address: Type.String(),
+  symbol: Type.String(),
+  amount: Type.String(),
 }));
 
 export class GetBalanceController extends SolanaController {
   private balanceResponseValidator = TypeCompiler.Compile(BalanceResponse);
 
-  async getBalance(address?: string, symbols?: string[]): Promise<string> {
+  async getBalance(address?: string, symbols?: string[]): Promise<any> {
     const publicKey = address ? new PublicKey(address) : new PublicKey(this.getWallet().publicKey);
 
     const tokenAccounts = [];
@@ -30,9 +30,9 @@ export class GetBalanceController extends SolanaController {
     if (!symbols || symbols.includes("SOL")) {
       const solBalance = await this.connection.getBalance(publicKey);
       tokenAccounts.push({
-        mint: "SOL", // Use "SOL" as the mint address for native SOL
-        name: "SOL",
-        uiAmount: (solBalance / 1e9).toString(), // Convert lamports to SOL
+        address: "11111111111111111111111111111111",
+        symbol: "SOL",
+        amount: (solBalance / 1e9).toString(), // Convert lamports to SOL
       });
     }
 
@@ -63,19 +63,19 @@ export class GetBalanceController extends SolanaController {
 
       // push requested tokens' info to the tokenAccounts array
       tokenAccounts.push({
-        mint: mint.toBase58(),
-        name: tokenDef.name,
-        uiAmount: uiAmount.toString(),
+        address: mint.toBase58(),
+        symbol: tokenDef.name,
+        amount: uiAmount.toString(),
       });
     }
 
-    const response = tokenAccounts; // Remove the tokenAccounts wrapper
+    const response = tokenAccounts;
 
     if (!this.balanceResponseValidator.Check(response)) {
       throw new Error('Balance response does not match the expected schema');
     }
 
-    return JSON.stringify(response);
+    return response; // Return the object directly, not stringified
   }
 }
 
@@ -100,7 +100,7 @@ export default function getBalanceRoute(fastify: FastifyInstance, folderName: st
         fastify.log.info(`Getting token balances for address: ${address || 'user wallet'}`);
         try {
           const result = await controller.getBalance(address, symbols);
-          return result;
+          reply.send(result); // Use reply.send() to let Fastify handle the serialization
         } catch (error) {
           fastify.log.error(error);
           reply.status(500).send({

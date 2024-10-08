@@ -68,6 +68,20 @@ $ git clone https://github.com/fengtality/larp.git
 $ cd larp
 ```
 
+### Install Node.js (v20 or higher)
+
+We recommend using [nvm](https://github.com/nvm-sh/nvm) to install Node.js.
+
+```sh-session
+nvm install 20
+nvm use 20
+```
+
+### Install pnpm
+```sh-session
+npm install -g pnpm
+```
+
 ### Install dependencies
 ```sh-session
 $ pnpm install
@@ -82,7 +96,7 @@ $ pnpm build
 
 ### Link `larp` command to global path
 ```sh-session
-$ pnpm link
+$ pnpm link --global
 ```
 
 >Note: If you get an error saying that the `larp` command is not found, try adding the following to your `.zshrc` or `.bashrc`:
@@ -128,6 +142,13 @@ Enter your private key (base58): <private_key>
 Wallet created successfully!
 ```
 
+### Set environment variables
+
+First, ensure that you have a wallet JSON file in the root directory (see [Create wallet JSON](#create-wallet-json)).
+
+1. Rename `env.example` file in the root directory as `.env`.
+2. Modify the environment variables as needed.
+
 ## Start API server
 
 Starts a local REST API server at the PORT specified in `.env` (default `3000`).
@@ -144,11 +165,6 @@ Starting larp server...
 ```
 
 ## Using the API Server
-
-First, ensure that you have a wallet JSON file in the root directory (see [Create wallet JSON](#create-wallet-json)).
-
-1. Rename `env.example` file in the root directory as `.env`.
-2. Modify the environment variables as needed.
 
 ```sh-session
 PORT=3000
