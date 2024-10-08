@@ -41,6 +41,7 @@
     "@typescript-eslint/eslint-plugin": "^8.2.0",
     "@typescript-eslint/parser": "^8.2.0",
     "bs58": "^6.0.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^9.9.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
@@ -55,7 +56,8 @@
   "scripts": {
     "start": "START_SERVER=true ts-node src/index.ts",
     "dev": "START_SERVER=true nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-    "build": "tsc",
+    "build": "tsc && pnpm run copy-files",
+    "copy-files": "copyfiles -u 1 src/**/*.json dist/",
     "serve": "node dist/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

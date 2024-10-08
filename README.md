@@ -186,7 +186,7 @@ In the meantime, we welcome you to fork the project and contribute by reporting/
 
 `larp` is licensed under the [MIT License](https://opensource.org/license/mit).
 
-Copyright 2024 Michael Feng
+Copyright 2024 Hummingbot Foundation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
