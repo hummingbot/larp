@@ -12,6 +12,72 @@ import { OrcaController } from '../orca.controller';
 import { SolanaController } from '../../solana/solana.controller';
 
 class OpenPositionsInBundleController extends OrcaController {
+  private async processBatch(
+    priceRanges: { lower: Decimal; upper: Decimal }[],
+    startIndex: number,
+    unoccupiedBundleIndexes: number[],
+    whirlpoolData: any,
+    tokenA: any,
+    tokenB: any,
+    positionBundlePubkey: PublicKey,
+    positionBundleTokenAccount: PublicKey,
+    whirlpoolPubkey: PublicKey,
+    positionBundleMint: PublicKey  // Add this parameter
+  ): Promise<{ signature: string; bundledPositions: string[] }> {
+    const open_bundled_position_ixs = priceRanges.map((range, index) => {
+      const bundled_position_pda = PDAUtil.getBundledPosition(
+        this.ctx.program.programId,
+        positionBundleMint,  // Use this instead of whirlpoolData.positionBundleMint
+        unoccupiedBundleIndexes[startIndex + index]
+      );
+
+      const lower_tick_index = PriceMath.priceToInitializableTickIndex(
+        range.lower,
+        tokenA.decimals,
+        tokenB.decimals,
+        whirlpoolData.tickSpacing
+      );
+      const upper_tick_index = PriceMath.priceToInitializableTickIndex(
+        range.upper,
+        tokenA.decimals,
+        tokenB.decimals,
+        whirlpoolData.tickSpacing
+      );
+
+      return {
+        instruction: WhirlpoolIx.openBundledPositionIx(
+          this.ctx.program,
+          {
+            funder: this.ctx.wallet.publicKey,
+            positionBundle: positionBundlePubkey,
+            positionBundleAuthority: this.ctx.wallet.publicKey,
+            positionBundleTokenAccount: positionBundleTokenAccount,
+            bundleIndex: unoccupiedBundleIndexes[startIndex + index],
+            bundledPositionPda: bundled_position_pda,
+            whirlpool: whirlpoolPubkey,
+            tickLowerIndex: lower_tick_index,
+            tickUpperIndex: upper_tick_index,
+          },
+        ),
+        pda: bundled_position_pda
+      };
+    });
+
+    const tx_builder = new TransactionBuilder(this.ctx.connection, this.ctx.wallet);
+    open_bundled_position_ixs.forEach(({ instruction }) => tx_builder.addInstruction(instruction));
+
+    const signature = await tx_builder.buildAndExecute();
+    console.log(`Batch signature:`, signature);
+
+    const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
+    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
+
+    return {
+      signature,
+      bundledPositions: open_bundled_position_ixs.map(({ pda }) => pda.publicKey.toBase58()),
+    };
+  }
+
   async openPositionsInBundle(
     baseSymbol: string,
     quoteSymbol: string,
@@ -20,7 +86,7 @@ class OpenPositionsInBundleController extends OrcaController {
     upperPrice: Decimal,
     positionBundleAddress: string,
     numberOfPositions: number
-  ): Promise<{ signature: string; bundledPositions: string[] }> {
+  ): Promise<{ signatures: string[]; bundledPositions: string[] }> {
     await this.loadOrca();
 
     const solanaController = new SolanaController();
@@ -70,57 +136,30 @@ class OpenPositionsInBundleController extends OrcaController {
     const unoccupied_bundle_indexes = PositionBundleUtil.getUnoccupiedBundleIndexes(position_bundle);
     console.log(`Unoccupied bundle indexes (first ${numberOfPositions}):`, unoccupied_bundle_indexes.slice(0, numberOfPositions));
 
-    const open_bundled_position_ixs = priceRanges.map((range, index) => {
-      const bundled_position_pda = PDAUtil.getBundledPosition(this.ctx.program.programId, position_bundle.positionBundleMint, unoccupied_bundle_indexes[index]);
+    const BATCH_SIZE = 10;
+    const signatures: string[] = [];
+    const bundledPositions: string[] = [];
 
-      const lower_tick_index = PriceMath.priceToInitializableTickIndex(
-        range.lower,
-        token_a.decimals,
-        token_b.decimals,
-        whirlpool_data.tickSpacing
+    for (let i = 0; i < numberOfPositions; i += BATCH_SIZE) {
+      const batchPriceRanges = priceRanges.slice(i, Math.min(i + BATCH_SIZE, numberOfPositions));
+      const batchResult = await this.processBatch(
+        batchPriceRanges,
+        i,
+        unoccupied_bundle_indexes,
+        whirlpool_data,
+        token_a,
+        token_b,
+        position_bundle_pubkey,
+        position_bundle_token_account,
+        whirlpool_pubkey,
+        position_bundle.positionBundleMint  // Add this parameter
       );
-      const upper_tick_index = PriceMath.priceToInitializableTickIndex(
-        range.upper,
-        token_a.decimals,
-        token_b.decimals,
-        whirlpool_data.tickSpacing
-      );
 
-      return {
-        instruction: WhirlpoolIx.openBundledPositionIx(
-          this.ctx.program,
-          {
-            funder: this.ctx.wallet.publicKey,
-            positionBundle: position_bundle_pubkey,
-            positionBundleAuthority: this.ctx.wallet.publicKey,
-            positionBundleTokenAccount: position_bundle_token_account,
-            bundleIndex: unoccupied_bundle_indexes[index],
-            bundledPositionPda: bundled_position_pda,
-            whirlpool: whirlpool_pubkey,
-            tickLowerIndex: lower_tick_index,
-            tickUpperIndex: upper_tick_index,
-          },
-        ),
-        pda: bundled_position_pda
-      };
-    });
+      signatures.push(batchResult.signature);
+      bundledPositions.push(...batchResult.bundledPositions);
+    }
 
-    // Create a transaction and add the instructions
-    const tx_builder = new TransactionBuilder(this.ctx.connection, this.ctx.wallet);
-    open_bundled_position_ixs.forEach(({ instruction }) => tx_builder.addInstruction(instruction));
-
-    // Send the transaction
-    const signature = await tx_builder.buildAndExecute();
-    console.log("signature:", signature);
-
-    // Wait for the transaction to complete
-    const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
-    await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
-
-    return {
-      signature,
-      bundledPositions: open_bundled_position_ixs.map(({ pda }) => pda.publicKey.toBase58()),
-    };
+    return { signatures, bundledPositions };
   }
 }
 
@@ -142,7 +181,7 @@ export default function openPositionsInBundleRoute(fastify: FastifyInstance, fol
       }),
       response: {
         200: Type.Object({
-          signature: Type.String(),
+          signatures: Type.Array(Type.String()),
           bundledPositions: Type.Array(Type.String()),
         })
       }
