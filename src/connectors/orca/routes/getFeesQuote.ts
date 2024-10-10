@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import { Static, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -10,7 +10,8 @@ import { DecimalUtil } from "@orca-so/common-sdk";
 import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 
-export const QuoteFeesResponse = Type.Object({
+// Define the QuoteFeesResponse schema using TypeBox
+const QuoteFeesResponseSchema = Type.Object({
   tokenA: Type.Object({
     address: Type.String(),
     amount: Type.String(),
@@ -21,12 +22,15 @@ export const QuoteFeesResponse = Type.Object({
   }),
 });
 
+// Infer the QuoteFeesResponse type from the schema
+type QuoteFeesResponse = Static<typeof QuoteFeesResponseSchema>;
+
 class GetFeesQuoteController extends OrcaController {
-  private feesQuoteValidator = TypeCompiler.Compile(QuoteFeesResponse);
+  private feesQuoteValidator = TypeCompiler.Compile(QuoteFeesResponseSchema);
 
   async getFeesQuote(
     positionAddress: string
-  ): Promise<string> {
+  ): Promise<QuoteFeesResponse> {
     await this.loadOrca();
 
     const position_pubkey = new PublicKey(positionAddress);
@@ -61,7 +65,7 @@ class GetFeesQuoteController extends OrcaController {
     const tokenA = whirlpool.getTokenAInfo();
     const tokenB = whirlpool.getTokenBInfo();
 
-    const feesQuote = {
+    const feesQuote: QuoteFeesResponse = {
       tokenA: {
         address: tokenA.mint.toBase58(),
         amount: DecimalUtil.adjustDecimals(new Decimal(quote_fee.feeOwedA.toString()), tokenA.decimals).toString()
@@ -77,14 +81,19 @@ class GetFeesQuoteController extends OrcaController {
       throw new Error('Fee quote does not match the expected schema');
     }
 
-    return JSON.stringify(feesQuote);
+    return feesQuote;
   }
 }
 
 export default function getFeesQuoteRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new GetFeesQuoteController();
 
-  fastify.get(`/${folderName}/quote-fees/:positionAddress`, {
+  fastify.route<{
+    Params: { positionAddress: string };
+    Reply: QuoteFeesResponse;
+  }>({
+    method: 'GET',
+    url: `/${folderName}/quote-fees/:positionAddress`,
     schema: {
       tags: [folderName],
       description: 'Get the fees quote for an Orca position',
@@ -92,11 +101,11 @@ export default function getFeesQuoteRoute(fastify: FastifyInstance, folderName: 
         positionAddress: Type.String(),
       }),
       response: {
-        200: QuoteFeesResponse
+        200: QuoteFeesResponseSchema
       },
     },
     handler: async (request, reply) => {
-      const { positionAddress } = request.params as { positionAddress: string };
+      const { positionAddress } = request.params;
       fastify.log.info(`Getting fees quote for Orca position: ${positionAddress}`);
       const result = await controller.getFeesQuote(positionAddress);
       return result;

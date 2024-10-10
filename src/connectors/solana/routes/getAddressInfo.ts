@@ -26,7 +26,7 @@ export default function getAddressInfoRoute(fastify: FastifyInstance, folderName
       fastify.log.info(`Getting Solana token info for address: ${tokenAddress}, useApi: ${useApi}`);
       
       const tokenInfo = await solanaController.getTokenByAddress(tokenAddress, useApi);
-      return JSON.stringify(tokenInfo);
+      return tokenInfo;
     }
   });
 }

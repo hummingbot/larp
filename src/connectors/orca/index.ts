@@ -6,6 +6,7 @@ import getPositionsInBundleRoute from './routes/getPositionsInBundle';
 import getAddLiquidityQuoteRoute from './routes/addLiquidityQuote';
 import getSwapQuoteRoute from './routes/quoteSwap';
 import getFeesQuoteRoute from './routes/getFeesQuote';
+import getFeeRewardsQuoteRoute from './routes/getFeeRewardsQuote';
 import executeSwapRoute from './routes/executeSwap';
 import openPositionRoute from './routes/openPosition';
 import closePositionRoute from './routes/closePosition';
@@ -33,6 +34,7 @@ export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
   getAddLiquidityQuoteRoute(fastify, folderName);
   getSwapQuoteRoute(fastify, folderName);
   getFeesQuoteRoute(fastify, folderName);
+  getFeeRewardsQuoteRoute(fastify, folderName);
   executeSwapRoute(fastify, folderName);
   openPositionRoute(fastify, folderName);
   closePositionRoute(fastify, folderName);

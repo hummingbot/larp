@@ -22,7 +22,7 @@ export default function getSymbolInfoRoute(fastify: FastifyInstance, folderName:
       fastify.log.info(`Getting Solana token info for symbol: ${symbol}`);
       
       const tokenInfo = await solanaController.getTokenBySymbol(symbol);
-      return JSON.stringify(tokenInfo);
+      return tokenInfo;
     }
   });
 }

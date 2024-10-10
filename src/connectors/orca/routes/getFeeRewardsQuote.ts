@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import { Static, Type } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -11,7 +11,8 @@ import Decimal from "decimal.js";
 import { OrcaController } from '../orca.controller';
 import { SolanaController } from '../../solana/solana.controller';
 
-export const QuoteFeeRewardsResponse = Type.Object({
+// Define the QuoteFeeRewardsResponse schema using TypeBox
+const QuoteFeeRewardsResponseSchema = Type.Object({
   tokenA: Type.Object({
     address: Type.String(),
     amount: Type.String(),
@@ -26,8 +27,11 @@ export const QuoteFeeRewardsResponse = Type.Object({
   })),
 });
 
+// Infer the QuoteFeeRewardsResponse type from the schema
+type QuoteFeeRewardsResponse = Static<typeof QuoteFeeRewardsResponseSchema>;
+
 class GetFeeRewardsQuoteController extends OrcaController {
-  private feeRewardsQuoteValidator = TypeCompiler.Compile(QuoteFeeRewardsResponse);
+  private feeRewardsQuoteValidator = TypeCompiler.Compile(QuoteFeeRewardsResponseSchema);
   private solanaController: SolanaController;
 
   constructor() {
@@ -37,7 +41,7 @@ class GetFeeRewardsQuoteController extends OrcaController {
 
   async getFeeRewardsQuote(
     positionAddress: string
-  ): Promise<string> {
+  ): Promise<QuoteFeeRewardsResponse> {
     await this.loadOrca();
 
     const position_pubkey = new PublicKey(positionAddress);
@@ -75,13 +79,13 @@ class GetFeeRewardsQuoteController extends OrcaController {
       position: position.getData(),
       tickLower: tick_lower,
       tickUpper: tick_upper,
-      tokenExtensionCtx,
+      tokenExtensionCtx: tokenExtensionCtx,
     });
 
     const tokenA = whirlpool.getTokenAInfo();
     const tokenB = whirlpool.getTokenBInfo();
 
-    const feeRewardsQuote = {
+    const feeRewardsQuote: QuoteFeeRewardsResponse = {
       tokenA: {
         address: tokenA.mint.toBase58(),
         amount: DecimalUtil.adjustDecimals(new Decimal(quote_fee.feeOwedA.toString()), tokenA.decimals).toString()
@@ -91,15 +95,13 @@ class GetFeeRewardsQuoteController extends OrcaController {
         amount: DecimalUtil.adjustDecimals(new Decimal(quote_fee.feeOwedB.toString()), tokenB.decimals).toString()
       },
       rewards: await Promise.all(quote_reward.rewardOwed.map(async (reward, i) => {
-        const reward_info = whirlpool.getData().rewardInfos[i];
-        if (PoolUtil.isRewardInitialized(reward_info)) {
-          const rewardToken = await this.solanaController.getTokenByAddress(reward_info.mint.toBase58());
-          return {
-            address: reward_info.mint.toBase58(),
-            amount: DecimalUtil.adjustDecimals(new Decimal(reward.toString()), rewardToken.decimals).toString()
-          };
-        }
-        return null;
+        const rewardInfo = whirlpool.getRewardInfos()[i];
+        if (rewardInfo.mint.equals(PublicKey.default)) return null;
+        const rewardToken = await this.ctx.fetcher.getMintInfo(rewardInfo.mint);
+        return {
+          address: rewardInfo.mint.toBase58(),
+          amount: DecimalUtil.adjustDecimals(new Decimal(reward.toString()), rewardToken.decimals).toString()
+        };
       })).then(results => results.filter(Boolean))
     };
 
@@ -108,14 +110,19 @@ class GetFeeRewardsQuoteController extends OrcaController {
       throw new Error('Fee and rewards quote does not match the expected schema');
     }
 
-    return JSON.stringify(feeRewardsQuote);
+    return feeRewardsQuote;
   }
 }
 
 export default function getFeeRewardsQuoteRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new GetFeeRewardsQuoteController();
 
-  fastify.get(`/${folderName}/fee-rewards-quote/:positionAddress`, {
+  fastify.route<{
+    Params: { positionAddress: string };
+    Reply: QuoteFeeRewardsResponse;
+  }>({
+    method: 'GET',
+    url: `/${folderName}/quote-fees-rewards/:positionAddress`,
     schema: {
       tags: [folderName],
       description: 'Get the fees and rewards quote for an Orca position',
@@ -123,11 +130,11 @@ export default function getFeeRewardsQuoteRoute(fastify: FastifyInstance, folder
         positionAddress: Type.String(),
       }),
       response: {
-        200: QuoteFeeRewardsResponse
+        200: QuoteFeeRewardsResponseSchema
       },
     },
     handler: async (request, reply) => {
-      const { positionAddress } = request.params as { positionAddress: string };
+      const { positionAddress } = request.params;
       fastify.log.info(`Getting fees and rewards quote for Orca position: ${positionAddress}`);
       const result = await controller.getFeeRewardsQuote(positionAddress);
       return result;
