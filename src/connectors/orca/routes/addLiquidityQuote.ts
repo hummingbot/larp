@@ -44,7 +44,7 @@ class AddLiquidityQuoteController extends OrcaController {
     console.log('Position Upper Price:', upperPrice.toString());
 
     const quote_token_amount = DecimalUtil.toBN(new Decimal(quoteTokenAmount.toString()), quoteToken.decimals);
-    const slippage = slippagePct
+    const slippage = slippagePct !== undefined
       ? Percentage.fromFraction(slippagePct * 100, 10000)
       : Percentage.fromFraction(1, 100);
 
@@ -123,14 +123,14 @@ class AddLiquidityQuoteController extends OrcaController {
 export default function addLiquidityQuoteRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new AddLiquidityQuoteController();
 
-  fastify.post(`/${folderName}/add-liquidity-quote`, {
+  fastify.get(`/${folderName}/quote-add-liquidity`, {
     schema: {
       tags: [folderName],
       description: 'Get quote for adding liquidity to an Orca position',
-      body: Type.Object({
+      querystring: Type.Object({
         positionAddress: Type.String(),
         quoteTokenAmount: Type.Number(),
-        slippagePct: Type.Optional(Type.Number()),
+        slippagePct: Type.Optional(Type.Number({ default: 1 })),
       }),
       response: {
         200: Type.Object({
@@ -156,7 +156,7 @@ export default function addLiquidityQuoteRoute(fastify: FastifyInstance, folderN
       }
     },
     handler: async (request, reply) => {
-      const { positionAddress, quoteTokenAmount, slippagePct } = request.body as {
+      const { positionAddress, quoteTokenAmount, slippagePct } = request.query as {
         positionAddress: string;
         quoteTokenAmount: number;
         slippagePct?: number;

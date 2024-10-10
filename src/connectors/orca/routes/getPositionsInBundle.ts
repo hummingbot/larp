@@ -71,7 +71,7 @@ class GetPositionsInBundleController extends OrcaController {
     return batchPositionInfos.filter((info): info is PositionInfoResponse => info !== null);
   }
 
-  async getPositionsInBundle(positionBundleAddress: string): Promise<PositionInfoResponse[]> {
+  async getPositionsInBundle(positionBundleAddress: string, indexes?: number[]): Promise<PositionInfoResponse[]> {
     await this.loadOrca();
 
     const position_bundle_pubkey = new PublicKey(positionBundleAddress);
@@ -81,7 +81,13 @@ class GetPositionsInBundleController extends OrcaController {
     const position_bundle = await this.ctx.fetcher.getPositionBundle(position_bundle_pubkey, IGNORE_CACHE);
 
     // Get the bundle indexes in use in PositionBundle
-    const occupied_bundle_indexes = PositionBundleUtil.getOccupiedBundleIndexes(position_bundle);
+    let occupied_bundle_indexes = PositionBundleUtil.getOccupiedBundleIndexes(position_bundle);
+    
+    // If indexes are provided, filter occupied_bundle_indexes
+    if (indexes && indexes.length > 0) {
+      occupied_bundle_indexes = occupied_bundle_indexes.filter(index => indexes.includes(index));
+    }
+    
     console.log("occupied bundle indexes:", occupied_bundle_indexes);
 
     const BATCH_SIZE = 5;
@@ -117,16 +123,20 @@ export default function getPositionsInBundleRoute(fastify: FastifyInstance, fold
       params: Type.Object({
         bundleAddress: Type.String()
       }),
+      querystring: Type.Object({
+        indexes: Type.Optional(Type.Array(Type.Integer()))
+      }),
       response: {
-        200: Type.Array(PositionInfoResponseSchema) // Use the schema, not the type
+        200: Type.Array(PositionInfoResponseSchema)
       }
     },
     handler: async (request, reply) => {
       const { bundleAddress } = request.params as { bundleAddress: string };
-      fastify.log.info(`Getting Orca positions for bundle address: ${bundleAddress}`);
+      const { indexes } = request.query as { indexes?: number[] };
+      fastify.log.info(`Getting Orca positions for bundle address: ${bundleAddress}${indexes ? ` with indexes: ${indexes.join(', ')}` : ''}`);
       
       try {
-        const positionsInfo = await controller.getPositionsInBundle(bundleAddress);
+        const positionsInfo = await controller.getPositionsInBundle(bundleAddress, indexes);
         reply.send(positionsInfo);
       } catch (error) {
         fastify.log.error(error);

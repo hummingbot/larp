@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { Type, Static } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 import { PublicKey } from '@solana/web3.js';
-import { PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
+import { PriceMath, PoolUtil, IGNORE_CACHE } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
 
@@ -29,7 +29,7 @@ export const PositionInfoResponseSchema = Type.Object({
 // Infer the PositionInfoResponse type from the schema
 export type PositionInfoResponse = Static<typeof PositionInfoResponseSchema>;
 
-class GetPositionsController extends OrcaController {
+export class GetPositionsController extends OrcaController {
   private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponseSchema);
 
   async getPositionInfo(positionAddress: string): Promise<PositionInfoResponse> {
@@ -38,7 +38,7 @@ class GetPositionsController extends OrcaController {
     const publicKey = new PublicKey(positionAddress);
 
     // Get the status of the position
-    const position = await this.client.getPosition(publicKey);
+    const position = await this.client.getPosition(publicKey, IGNORE_CACHE);
     const data = position.getData();
 
     // Get the pool to which the position belongs
