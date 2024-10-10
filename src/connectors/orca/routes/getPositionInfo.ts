@@ -1,12 +1,13 @@
 import { FastifyInstance } from 'fastify';
-import { Type } from '@sinclair/typebox';
+import { Type, Static } from '@sinclair/typebox';
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 import { PublicKey } from '@solana/web3.js';
 import { PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
 
-export const PositionInfoResponse = Type.Object({
+// Define the PositionInfoResponse schema using TypeBox
+export const PositionInfoResponseSchema = Type.Object({
   position: Type.String(),
   whirlpoolAddress: Type.String(),
   whirlpoolPrice: Type.String(),
@@ -25,9 +26,13 @@ export const PositionInfoResponse = Type.Object({
   amountB: Type.String()
 });
 
+// Infer the PositionInfoResponse type from the schema
+export type PositionInfoResponse = Static<typeof PositionInfoResponseSchema>;
+
 class GetPositionsController extends OrcaController {
-  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponse);
-  async getPositionInfo(positionAddress: string): Promise<string> {
+  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponseSchema);
+
+  async getPositionInfo(positionAddress: string): Promise<PositionInfoResponse> {
     await this.loadOrca();
 
     const publicKey = new PublicKey(positionAddress);
@@ -55,7 +60,7 @@ class GetPositionsController extends OrcaController {
       true
     );
 
-    const positionInfo = {
+    const positionInfo: PositionInfoResponse = {
       position: publicKey.toBase58(),
       whirlpoolAddress: data.whirlpool.toBase58(),
       whirlpoolPrice: price.toFixed(token_b.decimals),
@@ -74,12 +79,12 @@ class GetPositionsController extends OrcaController {
       amountB: DecimalUtil.fromBN(amounts.tokenB, token_b.decimals).toString()
     };
 
-    // Validate the positionInfo object against the schema
+    // Validate the positionInfo object before returning
     if (!this.positionInfoValidator.Check(positionInfo)) {
       throw new Error('Position info does not match the expected schema');
     }
 
-    return JSON.stringify(positionInfo);
+    return positionInfo;
   }
 }
 
@@ -94,15 +99,24 @@ export default function getPositionInfoRoute(fastify: FastifyInstance, folderNam
         positionAddress: Type.String()
       }),
       response: {
-        200: PositionInfoResponse
+        200: PositionInfoResponseSchema
       }
     },
     handler: async (request, reply) => {
       const { positionAddress } = request.params as { positionAddress: string };
       fastify.log.info(`Getting Orca positions for address: ${positionAddress}`);
       
-      const positionInfo = await controller.getPositionInfo(positionAddress);
-      return positionInfo;
+      try {
+        const positionInfo = await controller.getPositionInfo(positionAddress);
+        reply.send(positionInfo);
+      } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({
+          statusCode: 500,
+          error: 'Internal Server Error',
+          message: 'An error occurred while fetching position info'
+        });
+      }
     }
   });
 }

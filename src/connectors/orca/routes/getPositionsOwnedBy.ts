@@ -7,11 +7,11 @@ import { BN } from "bn.js";
 import { PDAUtil, IGNORE_CACHE, PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
-import { PositionInfoResponse } from './getPositionInfo';
+import { PositionInfoResponse, PositionInfoResponseSchema } from './getPositionInfo';
 
 class PositionsOwnedController extends OrcaController {
-  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponse);
-  async getPositions(address?: string): Promise<typeof PositionInfoResponse[]> {
+  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponseSchema);
+  async getPositions(address?: string): Promise<PositionInfoResponse[]> {
     await this.loadOrca();
 
     const publicKey = address ? new PublicKey(address) : this.ctx.wallet.publicKey;
@@ -62,7 +62,7 @@ class PositionsOwnedController extends OrcaController {
           true
         );
 
-        const positionInfo = {
+        const positionInfo : PositionInfoResponse = {
           position: p.toBase58(),
           whirlpoolAddress: data.whirlpool.toBase58(),
           whirlpoolPrice: price.toFixed(token_b.decimals),
@@ -108,7 +108,7 @@ export default function positionsOwnedRoute(fastify: FastifyInstance, folderName
         address: Type.Optional(Type.String())
       }),
       response: {
-        200: Type.Array(PositionInfoResponse)
+        200: Type.Array(PositionInfoResponseSchema)
       }
     },
     handler: async (request, reply) => {

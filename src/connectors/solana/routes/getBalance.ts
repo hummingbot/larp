@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { Type } from '@sinclair/typebox';
-import { TypeCompiler } from '@sinclair/typebox/compiler'
-import { PublicKey, Connection } from "@solana/web3.js";
+import { Static, Type } from '@sinclair/typebox';
+import { TypeCompiler } from '@sinclair/typebox/compiler';
+import { PublicKey } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, unpackAccount } from "@solana/spl-token";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import BN from "bn.js";
@@ -11,28 +11,33 @@ import {
   BadRequestResponseSchema,
 } from '../solana.controller';
 
-// Update the BalanceResponse schema
-const BalanceResponse = Type.Array(Type.Object({
-  address: Type.String(),
-  symbol: Type.String(),
-  amount: Type.String(),
-}));
+// Define the BalanceResponse schema using TypeBox
+const BalanceResponseSchema = Type.Array(
+  Type.Object({
+    address: Type.String(),
+    symbol: Type.String(),
+    amount: Type.String(),
+  })
+);
+
+// Infer the BalanceResponse type from the schema
+type BalanceResponse = Static<typeof BalanceResponseSchema>;
 
 export class GetBalanceController extends SolanaController {
-  private balanceResponseValidator = TypeCompiler.Compile(BalanceResponse);
+  private balanceValidator = TypeCompiler.Compile(BalanceResponseSchema);
 
-  async getBalance(address?: string, symbols?: string[]): Promise<any> {
+  async getBalance(address?: string, symbols?: string[]): Promise<BalanceResponse> {
     const publicKey = address ? new PublicKey(address) : new PublicKey(this.getWallet().publicKey);
-
-    const tokenAccounts = [];
 
     // Convert symbols to uppercase for case-insensitive matching
     const upperCaseSymbols = symbols?.map(s => s.toUpperCase());
 
     // Fetch SOL balance only if symbols is undefined or includes "SOL" (case-insensitive)
+    const balances: BalanceResponse = [];
+
     if (!upperCaseSymbols || upperCaseSymbols.includes("SOL")) {
       const solBalance = await this.connection.getBalance(publicKey);
-      tokenAccounts.push({
+      balances.push({
         address: "11111111111111111111111111111111",
         symbol: "SOL",
         amount: (solBalance / 1e9).toString(), // Convert lamports to SOL
@@ -48,13 +53,13 @@ export class GetBalanceController extends SolanaController {
       return acc;
     }, {});
 
-    // get all token accounts for the provided address
+    // Get all token accounts for the provided address
     const accounts = await this.connection.getTokenAccountsByOwner(
       publicKey, // Use the provided address
       { programId: TOKEN_PROGRAM_ID }
     );
 
-    // loop through all the token accounts and fetch the requested tokens
+    // Loop through all the token accounts and fetch the requested tokens
     for (const value of accounts.value) {
       const parsedTokenAccount = unpackAccount(value.pubkey, value.account);
       const mint = parsedTokenAccount.mint;
@@ -64,21 +69,20 @@ export class GetBalanceController extends SolanaController {
       const amount = parsedTokenAccount.amount;
       const uiAmount = DecimalUtil.fromBN(new BN(amount.toString()), tokenDef.decimals);
 
-      // push requested tokens' info to the tokenAccounts array
-      tokenAccounts.push({
+      // Push requested tokens' info to the balances array
+      balances.push({
         address: mint.toBase58(),
         symbol: tokenDef.name,
         amount: uiAmount.toString(),
       });
     }
 
-    const response = tokenAccounts;
-
-    if (!this.balanceResponseValidator.Check(response)) {
+    // Validate the balances array before returning
+    if (!this.balanceValidator.Check(balances)) {
       throw new Error('Balance response does not match the expected schema');
     }
 
-    return response; // Return the object directly, not stringified
+    return balances;
   }
 }
 
@@ -94,7 +98,7 @@ export default function getBalanceRoute(fastify: FastifyInstance, folderName: st
           symbols: Type.Optional(Type.Array(Type.String(), { default: ["SOL"] }))
         }),
         response: {
-          200: BalanceResponse,
+          200: BalanceResponseSchema,
           400: BadRequestResponseSchema
         }
       },

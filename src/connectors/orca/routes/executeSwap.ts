@@ -71,9 +71,9 @@ class ExecuteSwapController extends OrcaController {
 
     const balanceController = new GetBalanceController();
     const getBalance = async (tokenAddress: string) => {
-      const balances = JSON.parse(await balanceController.getBalance());
-      const tokenBalance = balances.find(b => b.mint === tokenAddress);
-      return tokenBalance ? tokenBalance.uiAmount : '0';
+      const balances = await balanceController.getBalance();
+      const tokenBalance = balances.find(b => b.address === tokenAddress);
+      return tokenBalance ? tokenBalance.amount : '0';
     };
 
     const inputTokenBefore = await getBalance(inputToken.address);

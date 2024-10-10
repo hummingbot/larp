@@ -136,6 +136,11 @@ class OpenPositionsInBundleController extends OrcaController {
     const unoccupied_bundle_indexes = PositionBundleUtil.getUnoccupiedBundleIndexes(position_bundle);
     console.log(`Unoccupied bundle indexes (first ${numberOfPositions}):`, unoccupied_bundle_indexes.slice(0, numberOfPositions));
 
+    // Check if there are enough unoccupied indexes
+    if (unoccupied_bundle_indexes.length < numberOfPositions) {
+      throw new Error(`Not enough unoccupied indexes in the position bundle. Required: ${numberOfPositions}, Available: ${unoccupied_bundle_indexes.length}`);
+    }
+
     const BATCH_SIZE = 10;
     const signatures: string[] = [];
     const bundledPositions: string[] = [];

@@ -5,12 +5,12 @@ import { PublicKey } from '@solana/web3.js';
 import { PDAUtil, PositionBundleUtil, IGNORE_CACHE, PriceMath, PoolUtil } from "@orca-so/whirlpools-sdk";
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
-import { PositionInfoResponse } from './getPositionInfo';
+import { PositionInfoResponse, PositionInfoResponseSchema } from './getPositionInfo';
 
 class GetPositionsInBundleController extends OrcaController {
-  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponse);
+  private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponseSchema);
 
-  async getPositionsInBundle(positionBundleAddress: string): Promise<typeof PositionInfoResponse.static[]> {
+  async getPositionsInBundle(positionBundleAddress: string): Promise<PositionInfoResponse[]> {
     await this.loadOrca();
 
     const position_bundle_pubkey = new PublicKey(positionBundleAddress);
@@ -49,7 +49,7 @@ class GetPositionsInBundleController extends OrcaController {
         true
       );
 
-      const positionInfo = {
+      const positionInfo : PositionInfoResponse = {
         position: bundled_position_pda.publicKey.toBase58(),
         whirlpoolAddress: data.whirlpool.toBase58(),
         whirlpoolPrice: price.toFixed(token_b.decimals),
@@ -82,24 +82,24 @@ class GetPositionsInBundleController extends OrcaController {
 export default function getPositionsInBundleRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new GetPositionsInBundleController();
 
-  fastify.get(`/${folderName}/positions-in-bundle/:positionBundleAddress`, {
+  fastify.get(`/${folderName}/positions-in-bundle/:bundleAddress`, {
     schema: {
       tags: [folderName],
-      description: 'Retrieve info about all positions in an Orca position bundle',
+      description: 'Retrieve info about positions in an Orca position bundle',
       params: Type.Object({
-        positionBundleAddress: Type.String()
+        bundleAddress: Type.String()
       }),
       response: {
-        200: Type.Array(PositionInfoResponse)
+        200: Type.Array(PositionInfoResponseSchema) // Use the schema, not the type
       }
     },
     handler: async (request, reply) => {
-      const { positionBundleAddress } = request.params as { positionBundleAddress: string };
-      fastify.log.info(`Getting Orca positions for bundle address: ${positionBundleAddress}`);
+      const { bundleAddress } = request.params as { bundleAddress: string };
+      fastify.log.info(`Getting Orca positions for bundle address: ${bundleAddress}`);
       
       try {
-        const positionsInfo = await controller.getPositionsInBundle(positionBundleAddress);
-        reply.send(positionsInfo); // Use reply.send() to let Fastify handle the serialization
+        const positionsInfo = await controller.getPositionsInBundle(bundleAddress);
+        reply.send(positionsInfo);
       } catch (error) {
         fastify.log.error(error);
         reply.status(500).send({
