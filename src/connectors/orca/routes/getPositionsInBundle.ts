@@ -6,29 +6,21 @@ import { PDAUtil, PositionBundleUtil, IGNORE_CACHE, PriceMath, PoolUtil } from "
 import { DecimalUtil } from "@orca-so/common-sdk";
 import { OrcaController } from '../orca.controller';
 import { PositionInfoResponse, PositionInfoResponseSchema } from './getPositionInfo';
+import { setTimeout } from 'timers/promises';
 
 class GetPositionsInBundleController extends OrcaController {
   private positionInfoValidator = TypeCompiler.Compile(PositionInfoResponseSchema);
 
-  async getPositionsInBundle(positionBundleAddress: string): Promise<PositionInfoResponse[]> {
-    await this.loadOrca();
+  private async processBatch(
+    bundledPositionPubkeys: PublicKey[]
+  ): Promise<PositionInfoResponse[]> {
+    const batchPositionInfos = await Promise.all(bundledPositionPubkeys.map(async (pubkey) => {
+      const position = await this.client.getPosition(pubkey, IGNORE_CACHE);
+      if (!position) {
+        console.warn(`Position not found for pubkey: ${pubkey.toBase58()}`);
+        return null;
+      }
 
-    const position_bundle_pubkey = new PublicKey(positionBundleAddress);
-    console.log("position bundle address:", position_bundle_pubkey.toBase58());
-
-    // Get PositionBundle account
-    const position_bundle = await this.ctx.fetcher.getPositionBundle(position_bundle_pubkey, IGNORE_CACHE);
-
-    // Get the bundle indexes in use in PositionBundle
-    const occupied_bundle_indexes = PositionBundleUtil.getOccupiedBundleIndexes(position_bundle);
-    console.log("occupied bundle indexes:", occupied_bundle_indexes);
-
-    const positionInfos = await Promise.all(occupied_bundle_indexes.map(async (index) => {
-      const bundled_position_pda = PDAUtil.getBundledPosition(this.ctx.program.programId, position_bundle.positionBundleMint, index);
-      console.log(`bundled position ${index} pubkey:`, bundled_position_pda.publicKey.toBase58());
-
-      // Use IGNORE_CACHE when fetching the position
-      const position = await this.client.getPosition(bundled_position_pda.publicKey, IGNORE_CACHE);
       const data = position.getData();
 
       // Use IGNORE_CACHE when fetching the pool
@@ -49,8 +41,8 @@ class GetPositionsInBundleController extends OrcaController {
         true
       );
 
-      const positionInfo : PositionInfoResponse = {
-        position: bundled_position_pda.publicKey.toBase58(),
+      const positionInfo: PositionInfoResponse = {
+        position: pubkey.toBase58(),
         whirlpoolAddress: data.whirlpool.toBase58(),
         whirlpoolPrice: price.toFixed(token_b.decimals),
         tokenA: token_a.mint.toBase58(),
@@ -75,7 +67,43 @@ class GetPositionsInBundleController extends OrcaController {
       return positionInfo;
     }));
 
-    return positionInfos; // Return the array directly, not stringified
+    // Filter out null values (positions that were not found)
+    return batchPositionInfos.filter((info): info is PositionInfoResponse => info !== null);
+  }
+
+  async getPositionsInBundle(positionBundleAddress: string): Promise<PositionInfoResponse[]> {
+    await this.loadOrca();
+
+    const position_bundle_pubkey = new PublicKey(positionBundleAddress);
+    console.log("position bundle address:", position_bundle_pubkey.toBase58());
+
+    // Get PositionBundle account
+    const position_bundle = await this.ctx.fetcher.getPositionBundle(position_bundle_pubkey, IGNORE_CACHE);
+
+    // Get the bundle indexes in use in PositionBundle
+    const occupied_bundle_indexes = PositionBundleUtil.getOccupiedBundleIndexes(position_bundle);
+    console.log("occupied bundle indexes:", occupied_bundle_indexes);
+
+    const BATCH_SIZE = 5;
+    const DELAY_BETWEEN_BATCHES = 1000;
+    const positionInfos: PositionInfoResponse[] = [];
+
+    for (let i = 0; i < occupied_bundle_indexes.length; i += BATCH_SIZE) {
+      const batchIndexes = occupied_bundle_indexes.slice(i, i + BATCH_SIZE);
+      const bundledPositionPDAs = batchIndexes.map(index => 
+        PDAUtil.getBundledPosition(this.ctx.program.programId, position_bundle.positionBundleMint, index)
+      );
+
+      const bundledPositionPubkeys = bundledPositionPDAs.map(pda => pda.publicKey);
+      console.log(`Fetching positions for batch ${i / BATCH_SIZE + 1}:`, bundledPositionPubkeys.map(pk => pk.toBase58()));
+
+      const batchPositionInfos = await this.processBatch(bundledPositionPubkeys);
+      positionInfos.push(...batchPositionInfos);
+
+      await setTimeout(DELAY_BETWEEN_BATCHES);
+    }
+
+    return positionInfos;
   }
 }
 
