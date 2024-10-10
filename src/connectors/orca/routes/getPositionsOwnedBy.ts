@@ -97,7 +97,7 @@ class PositionsOwnedController extends OrcaController {
   }
 }
 
-export default function positionsOwnedRoute(fastify: FastifyInstance, folderName: string) {
+export default function getPositionsOwnedByRoute(fastify: FastifyInstance, folderName: string) {
   const controller = new PositionsOwnedController();
 
   fastify.get(`/${folderName}/positions-owned`, {

@@ -1,5 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import path from 'path';
+import getPositionsOwnedByRoute from './routes/getPositionsOwnedBy';
+import getBundlesOwnedByRoute from './routes/getBundlesOwnedBy';
 import getPoolInfoRoute from './routes/getPoolInfo';
 import getPositionInfoRoute from './routes/getPositionInfo';
 import getPositionsInBundleRoute from './routes/getPositionsInBundle';
@@ -20,14 +22,14 @@ import addLiquidityInBundleRoute from './routes/addLiquidityInBundle';
 import removeLiquidityInBundleRoute from './routes/removeLiquidityInBundle';
 import closePositionsInBundleRoute from './routes/closePositionsInBundle';
 import deletePositionBundleRoute from './routes/deletePositionBundle';
-import positionsOwnedRoute from './routes/getPositionsOwnedBy';
 
 export const orcaRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Get the folder name dynamically
   const folderName = path.basename(__dirname);
 
   // Register individual routes
-  positionsOwnedRoute(fastify, folderName);
+  getPositionsOwnedByRoute(fastify, folderName);
+  getBundlesOwnedByRoute(fastify, folderName);
   getPoolInfoRoute(fastify, folderName);
   getPositionInfoRoute(fastify, folderName);
   getPositionsInBundleRoute(fastify, folderName);
