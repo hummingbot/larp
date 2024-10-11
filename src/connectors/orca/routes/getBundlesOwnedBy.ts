@@ -4,8 +4,14 @@ import { PublicKey } from '@solana/web3.js';
 import { getAllPositionAccountsByOwner, PositionMap } from "@orca-so/whirlpools-sdk/dist/network/public";
 import { OrcaController } from '../orca.controller';
 
+// Update the interface for the PositionBundleData
+interface PositionBundleData {
+  positionBundleAddress: PublicKey;
+  positionBitmapCount: number; // Changed from positionCount to positionBitmapCount
+}
+
 class BundlesOwnedController extends OrcaController {
-  async getBundleAddresses(address?: string): Promise<string[]> {
+  async getBundleData(address?: string): Promise<PositionBundleData[]> {
     await this.loadOrca();
 
     const publicKey = address ? new PublicKey(address) : this.ctx.wallet.publicKey;
@@ -18,7 +24,12 @@ class BundlesOwnedController extends OrcaController {
       owner: publicKey,
     });
 
-    return positionMap.positionBundles.map(bundle => bundle.positionBundleAddress.toString());
+    return positionMap.positionBundles
+      .map(bundle => ({
+        positionBundleAddress: bundle.positionBundleAddress as PublicKey,
+        positionBitmapCount: bundle.positionBundleData.positionBitmap.filter(bit => bit !== 0).length, // Changed property name
+      }))
+      .sort((a, b) => b.positionBitmapCount - a.positionBitmapCount); // Updated sort comparison
   }
 }
 
@@ -28,21 +39,23 @@ export default function bundlesOwnedRoute(fastify: FastifyInstance, folderName: 
   fastify.get(`/${folderName}/bundles-owned`, {
     schema: {
       tags: [folderName],
-      description: 'Retrieve a list of Orca position bundle addresses owned by an address or, if no address is provided, the user\'s wallet',
+      description: 'Retrieve a list of Orca position bundle data owned by an address or, if no address is provided, the user\'s wallet',
       querystring: Type.Object({
         address: Type.Optional(Type.String())
       }),
       response: {
-        200: Type.Array(Type.String())
+        200: Type.Array(Type.Object({
+          positionBundleAddress: Type.String(),
+          positionBitmapCount: Type.Number()
+        }))
       }
     },
     handler: async (request, reply) => {
       const { address } = request.query as { address?: string };
 
-      fastify.log.info(`Getting Orca position bundle addresses for ${address || 'user wallet'}`);
+      fastify.log.info(`Getting Orca position bundle data for ${address || 'user wallet'}`);
       
-      const bundleAddresses = await controller.getBundleAddresses(address);
-      return bundleAddresses;
+      return await controller.getBundleData(address);
     }
   });
 }

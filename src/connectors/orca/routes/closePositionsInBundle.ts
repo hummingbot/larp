@@ -224,7 +224,7 @@ export default function closePositionsInBundleRoute(fastify: FastifyInstance, fo
     schema: {
       tags: [folderName],
       description: 'Close all bundled Orca positions in a position bundle',
-      body: Type.Object({
+      querystring: Type.Object({
         positionBundleAddress: Type.String(),
       }),
       response: {
@@ -235,7 +235,7 @@ export default function closePositionsInBundleRoute(fastify: FastifyInstance, fo
       }
     },
     handler: async (request, reply) => {
-      const { positionBundleAddress } = request.body as {
+      const { positionBundleAddress } = request.query as {
         positionBundleAddress: string;
       };
       fastify.log.info(`Closing all bundled Orca positions in bundle: ${positionBundleAddress}`);

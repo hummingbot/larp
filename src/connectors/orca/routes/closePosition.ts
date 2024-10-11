@@ -13,13 +13,7 @@ import {
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { OrcaController } from '../orca.controller';
 
-const ClosePositionResponse = Type.Object({
-  signature: Type.String(),
-});
-
 class ClosePositionController extends OrcaController {
-  private closePositionResponseValidator = TypeCompiler.Compile(ClosePositionResponse);
-
   async closePosition(positionAddress: string, slippagePct: number): Promise<string> {
     await this.loadOrca();
 
@@ -191,14 +185,7 @@ class ClosePositionController extends OrcaController {
     const latest_blockhash = await this.ctx.connection.getLatestBlockhash();
     await this.ctx.connection.confirmTransaction({signature, ...latest_blockhash}, "confirmed");
 
-    const response = { signature };
-
-    // Validate the response object against the schema
-    if (!this.closePositionResponseValidator.Check(response)) {
-      throw new Error('Close position response does not match the expected schema');
-    }
-
-    return JSON.stringify(response);
+    return signature;
   }
 }
 
@@ -214,7 +201,7 @@ export default function closePositionRoute(fastify: FastifyInstance, folderName:
         slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
       }),
       response: {
-        200: ClosePositionResponse
+        200: Type.String()
       },
     },
     handler: async (request, reply) => {
