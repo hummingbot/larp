@@ -14,15 +14,14 @@ export default class Balance extends Command {
     const controller = new GetBalanceController()
 
     try {
-      const result = await controller.getBalance(flags.address, flags.symbols)
-      const balances = JSON.parse(result)
+      const balances = await controller.getBalance(flags.address, flags.symbols)
 
       this.log(`Token balances for ${flags.address || 'default wallet'}:`)
-      balances.forEach((balance: any) => {
-        this.log(`${balance.name}: ${balance.uiAmount}`)
+      balances.forEach((balance) => {
+        this.log(`${balance.symbol}: ${balance.amount}`)
       })
     } catch (error) {
-      this.error(`Error fetching balances: ${error.message}`)
+      this.error(`Error fetching balances: ${(error as Error).message}`)
     }
   }
 }
