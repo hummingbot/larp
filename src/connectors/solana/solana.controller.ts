@@ -284,14 +284,15 @@ export class SolanaController {
       const unsafeMax = Math.max(...nonZeroFees);
 
       const maxPriorityFee = parseInt(process.env.MAX_PRIORITY_FEE, Infinity);
+      const minPriorityFee = parseInt(process.env.MIN_PRIORITY_FEE, 0);
 
       const result = {
-        min,
-        low: Math.min(low, maxPriorityFee),
-        medium: Math.min(medium, maxPriorityFee),
-        high: Math.min(high, maxPriorityFee),
-        veryHigh: Math.min(veryHigh, maxPriorityFee),
-        unsafeMax: Math.min(unsafeMax, maxPriorityFee),
+        min: Math.max(min, minPriorityFee),
+        low: Math.max(Math.min(low, maxPriorityFee), minPriorityFee),
+        medium: Math.max(Math.min(medium, maxPriorityFee), minPriorityFee),
+        high: Math.max(Math.min(high, maxPriorityFee), minPriorityFee),
+        veryHigh: Math.max(Math.min(veryHigh, maxPriorityFee), minPriorityFee),
+        unsafeMax: Math.max(Math.min(unsafeMax, maxPriorityFee), minPriorityFee),
       };
 
       return result;
@@ -445,10 +446,23 @@ export class SolanaController {
     let signature: string;
 
     while (blockheight < lastValidBlockHeight) {
-      signature = await this.connection.sendRawTransaction(rawTx, {
-        skipPreflight: true,
-        maxRetries: 0,
-      });
+      const [primarySignature, secondarySignature] = await Promise.all([
+        this.connection.sendRawTransaction(rawTx, {
+          skipPreflight: true,
+          maxRetries: 0,
+        }),
+        this.secondConnection.sendRawTransaction(rawTx, {
+          skipPreflight: true,
+          maxRetries: 0,
+        }),
+      ]);
+
+      if (primarySignature !== secondarySignature) {
+        console.error('Primary and secondary signatures do not match.');
+        throw new Error('Signature mismatch between primary and secondary connections.');
+      }
+
+      signature = primarySignature; // Use the primary signature for further processing
 
       // Sleep for 500ms
       await new Promise((resolve) => setTimeout(resolve, 500));
