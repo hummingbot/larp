@@ -12,7 +12,7 @@ class GetSwapQuoteController extends MeteoraController {
     outputTokenSymbol: string,
     amount: number,
     poolAddress: string,
-    slippageBps?: number,
+    slippagePct?: number,
   ): Promise<{
     estimatedAmountIn: string;
     estimatedAmountOut: string;
@@ -34,7 +34,7 @@ class GetSwapQuoteController extends MeteoraController {
 
     const binArrays = await dlmmPool.getBinArrayForSwap(swapForY);
 
-    const slippage = new BN(slippageBps || 100); // Default 1% slippage
+    const slippage = new BN((slippagePct || 1) * 100); // Default 1% slippage
 
     const swapQuote = dlmmPool.swapQuote(swapAmount, swapForY, slippage, binArrays);
 
@@ -61,7 +61,7 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
         outputTokenSymbol: Type.String(),
         amount: Type.Number(),
         poolAddress: Type.String(),
-        slippageBps: Type.Optional(Type.Number({ default: 100, minimum: 0, maximum: 10000 })),
+        slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
       }),
       response: {
         200: Type.Object({
@@ -72,13 +72,13 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
       },
     },
     handler: async (request, reply) => {
-      const { inputTokenSymbol, outputTokenSymbol, amount, poolAddress, slippageBps } =
+      const { inputTokenSymbol, outputTokenSymbol, amount, poolAddress, slippagePct } =
         request.query as {
           inputTokenSymbol: string;
           outputTokenSymbol: string;
           amount: number;
           poolAddress: string;
-          slippageBps?: number;
+          slippagePct?: number;
         };
       fastify.log.info(
         `Getting Meteora swap quote for ${inputTokenSymbol} to ${outputTokenSymbol}`,
@@ -89,7 +89,7 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
           outputTokenSymbol,
           amount,
           poolAddress,
-          slippageBps,
+          slippagePct,
         );
         return quote;
       } catch (error) {

@@ -10,6 +10,7 @@ import getSwapQuoteRoute from './routes/getSwapQuote';
 import openPositionRoute from './routes/openPosition';
 import removeLiquidityRoute from './routes/removeLiquidity';
 import getPositionsOwnedByRoute from './routes/getPositionsOwnedBy';
+import getActiveBinRoute from './routes/getActiveBin';
 
 export const meteoraRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   // Get the folder name dynamically
@@ -26,6 +27,7 @@ export const meteoraRoutes: FastifyPluginAsync = async (fastify: FastifyInstance
   openPositionRoute(fastify, folderName);
   removeLiquidityRoute(fastify, folderName);
   getPositionsOwnedByRoute(fastify, folderName);
+  getActiveBinRoute(fastify, folderName);
 };
 
 export default meteoraRoutes;

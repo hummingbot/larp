@@ -11,7 +11,7 @@ class ExecuteSwapController extends MeteoraController {
     outputTokenSymbol: string,
     amount: number,
     poolAddress: string,
-    slippageBps?: number,
+    slippagePct?: number,
   ): Promise<{
     signature: string;
     totalInputSwapped: number;
@@ -35,7 +35,7 @@ class ExecuteSwapController extends MeteoraController {
 
     const binArrays = await dlmmPool.getBinArrayForSwap(swapForY);
 
-    const slippage = new BN(slippageBps || 100); // Default 1% slippage
+    const slippage = new BN((slippagePct || 1) * 100); // Default 1% slippage
 
     const swapQuote = dlmmPool.swapQuote(swapAmount, swapForY, slippage, binArrays);
 
@@ -103,7 +103,7 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
         outputTokenSymbol: Type.String(),
         amount: Type.Number(),
         poolAddress: Type.String(),
-        slippageBps: Type.Optional(Type.Number({ default: 100, minimum: 0, maximum: 10000 })),
+        slippagePct: Type.Optional(Type.Number({ default: 1, minimum: 0, maximum: 100 })),
       }),
       response: {
         200: Type.Object({
@@ -115,13 +115,13 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
       },
     },
     handler: async (request, reply) => {
-      const { inputTokenSymbol, outputTokenSymbol, amount, poolAddress, slippageBps } =
+      const { inputTokenSymbol, outputTokenSymbol, amount, poolAddress, slippagePct } =
         request.body as {
           inputTokenSymbol: string;
           outputTokenSymbol: string;
           amount: number;
           poolAddress: string;
-          slippageBps?: number;
+          slippagePct?: number;
         };
       try {
         fastify.log.info(`Executing Meteora swap from ${inputTokenSymbol} to ${outputTokenSymbol}`);
@@ -130,7 +130,7 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
           outputTokenSymbol,
           amount,
           poolAddress,
-          slippageBps,
+          slippagePct,
         );
         return result;
       } catch (error) {
