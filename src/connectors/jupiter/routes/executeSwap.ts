@@ -5,6 +5,7 @@ import { QuoteResponse, SwapResponse } from '@jup-ag/api';
 import { Wallet } from '@coral-xyz/anchor';
 import { JupiterController } from '../jupiter.controller';
 import { GetSwapQuoteController } from './quoteSwap';
+import { priorityFeeMultiplier } from '../../solana/solana.controller';
 
 export class ExecuteSwapController extends JupiterController {
   constructor() {
@@ -17,7 +18,9 @@ export class ExecuteSwapController extends JupiterController {
         quoteResponse: quote,
         userPublicKey: wallet.publicKey.toBase58(),
         dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: 'auto',
+        prioritizationFeeLamports: {
+          autoMultiplier: Math.max(priorityFeeMultiplier, 3),
+        },
       },
     });
     return swapObj;

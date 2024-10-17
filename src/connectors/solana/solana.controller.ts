@@ -47,7 +47,9 @@ interface PriorityFeeEstimates {
 const TOKEN_LIST_FILE =
   process.env.SOLANA_NETWORK === 'devnet'
     ? 'lists/devnet-tokenlist.json'
-    : 'lists/solflare-tokenlist-20240912.json';
+    : 'lists/mainnet-tokenlist.json';
+
+export let priorityFeeMultiplier: number = 1;
 
 export const SolanaAddressSchema = Type.String({
   pattern: '^[1-9A-HJ-NP-Za-km-z]{32,44}$',
@@ -228,6 +230,9 @@ export class SolanaController {
 
   async fetchEstimatePriorityFees(rcpURL: string): Promise<PriorityFeeEstimates> {
     try {
+      const maxPriorityFee = parseInt(process.env.MAX_PRIORITY_FEE);
+      const minPriorityFee = parseInt(process.env.MIN_PRIORITY_FEE);
+
       // Only include params that are defined
       const params: string[][] = [];
       // Add accounts from https://triton.one/solana-prioritization-fees/ to track general fees
@@ -268,12 +273,12 @@ export class SolanaController {
       // Process the response to categorize fees
       const fees = data.result.map((item) => item.prioritizationFee);
 
-      // Filter out zero fees for calculations
-      const nonZeroFees = fees.filter((fee) => fee > 0);
+      // Filter out fees lower than the minimum fee for calculations
+      const nonZeroFees = fees.filter((fee) => fee >= minPriorityFee);
       nonZeroFees.sort((a, b) => a - b); // Sort non-zero fees in ascending order
 
       if (nonZeroFees.length === 0) {
-        throw new Error('No non-zero fees available for calculation');
+        nonZeroFees.push(minPriorityFee); // Add one entry of min fee if no fees are available
       }
 
       const min = Math.min(...nonZeroFees);
@@ -283,9 +288,6 @@ export class SolanaController {
       const veryHigh = nonZeroFees[Math.floor(nonZeroFees.length * 0.8)];
       const unsafeMax = Math.max(...nonZeroFees);
 
-      const maxPriorityFee = parseInt(process.env.MAX_PRIORITY_FEE, Infinity);
-      const minPriorityFee = parseInt(process.env.MIN_PRIORITY_FEE, 0);
-
       const result = {
         min: Math.max(min, minPriorityFee),
         low: Math.max(Math.min(low, maxPriorityFee), minPriorityFee),
@@ -294,6 +296,8 @@ export class SolanaController {
         veryHigh: Math.max(Math.min(veryHigh, maxPriorityFee), minPriorityFee),
         unsafeMax: Math.max(Math.min(unsafeMax, maxPriorityFee), minPriorityFee),
       };
+
+      console.debug('[PRIORITY FEES] Calculated priority fees:', result);
 
       return result;
     } catch (error) {
@@ -416,23 +420,29 @@ export class SolanaController {
       : priorityFeesEstimate.high;
 
     const priorityFeeInstruction = ComputeBudgetProgram.setComputeUnitPrice({
-      microLamports: selectedPriorityFee,
+      microLamports: selectedPriorityFee * Math.max(priorityFeeMultiplier, 1),
     });
 
     tx.instructions.push(priorityFeeInstruction);
 
-    let blockheight = await this.connection.getBlockHeight({ commitment: 'confirmed' });
-
-    const lastValidBlockHeight = blockheight + 150;
+    const blockhashAndContext = await this.connection.getLatestBlockhashAndContext('confirmed');
+    const lastValidBlockHeight = blockhashAndContext.value.lastValidBlockHeight;
+    const blockhash = blockhashAndContext.value.blockhash;
+    const minContextSlot = blockhashAndContext.context.slot;
 
     tx.lastValidBlockHeight = lastValidBlockHeight;
+    tx.recentBlockhash = blockhash;
     tx.sign(...signers);
 
     const signature = await this.sendAndConfirmRawTransaction(
       tx.serialize(),
       signers[0].publicKey.toBase58(),
       lastValidBlockHeight,
+      minContextSlot,
     );
+
+    // Decrease priority fee multiplier if transaction is successful
+    this.decreasePriorityFeeMultiplier();
 
     return signature;
   }
@@ -441,6 +451,7 @@ export class SolanaController {
     rawTx: Buffer | Uint8Array | Array<number>,
     payerAddress: string,
     lastValidBlockHeight: number,
+    minContextSlot?: number,
   ): Promise<string> {
     let blockheight = await this.connection.getBlockHeight({ commitment: 'confirmed' });
     let signature: string;
@@ -449,10 +460,14 @@ export class SolanaController {
       const [primarySignature, secondarySignature] = await Promise.all([
         this.connection.sendRawTransaction(rawTx, {
           skipPreflight: true,
+          preflightCommitment: 'confirmed',
+          ...(minContextSlot !== undefined && { minContextSlot }),
           maxRetries: 0,
         }),
         this.secondConnection.sendRawTransaction(rawTx, {
           skipPreflight: true,
+          preflightCommitment: 'confirmed',
+          ...(minContextSlot !== undefined && { minContextSlot }),
           maxRetries: 0,
         }),
       ]);
@@ -464,8 +479,7 @@ export class SolanaController {
 
       signature = primarySignature; // Use the primary signature for further processing
 
-      // Sleep for 500ms
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       const [firstConfirm, secondConfirm, thirdConfirm, fourthConfirm] = await Promise.all([
         this.confirmTransaction(signature, this.connection),
@@ -491,6 +505,7 @@ export class SolanaController {
 
     if (!(firstConfirm || secondConfirm || thirdConfirm || fourthConfirm)) {
       console.error('Transaction could not be confirmed within the valid block height range.');
+      this.increasePriorityFeeMultiplier();
       throw new TransactionExpiredBlockheightExceededError(signature);
     }
 
@@ -518,7 +533,7 @@ export class SolanaController {
         if (attempt < 19) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         } else {
-          // Return default values after 10 attempts
+          // Return default values after 19 attempts
           console.error(`Error fetching transaction details: ${error.message}`);
           return { balanceChange: 0, fee: 0 };
         }
@@ -577,5 +592,25 @@ export class SolanaController {
     const fee = (txDetails.meta?.fee || 0) / 1_000_000_000; // Convert lamports to SOL
 
     return { balanceChange, fee };
+  }
+
+  private increasePriorityFeeMultiplier(): void {
+    priorityFeeMultiplier += 5;
+    console.debug(`[PRIORITY FEE] Increased priorityFeeMultiplier to: ${priorityFeeMultiplier}`);
+  }
+
+  private decreasePriorityFeeMultiplier(): void {
+    if (priorityFeeMultiplier <= 1) {
+      priorityFeeMultiplier = 1;
+      console.debug(
+        `[PRIORITY FEE] Set priorityFeeMultiplier to minimum value: ${priorityFeeMultiplier}`,
+      );
+      return;
+    }
+
+    if (priorityFeeMultiplier > 1) {
+      priorityFeeMultiplier -= 1;
+      console.debug(`[PRIORITY FEE] Decreased priorityFeeMultiplier to: ${priorityFeeMultiplier}`);
+    }
   }
 }

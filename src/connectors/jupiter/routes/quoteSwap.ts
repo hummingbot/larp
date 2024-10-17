@@ -38,6 +38,7 @@ export class GetSwapQuoteController extends JupiterController {
       slippageBps,
       onlyDirectRoutes,
       asLegacyTransaction,
+      swapMode: 'ExactIn',
     };
 
     const quote = await this.jupiterQuoteApi.quoteGet(params);
