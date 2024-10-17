@@ -456,7 +456,7 @@ export class SolanaController {
     let blockheight = await this.connection.getBlockHeight({ commitment: 'confirmed' });
     let signature: string;
 
-    while (blockheight < lastValidBlockHeight) {
+    while (blockheight <= lastValidBlockHeight + 50) {
       const [primarySignature, secondarySignature] = await Promise.all([
         this.connection.sendRawTransaction(rawTx, {
           skipPreflight: true,
@@ -479,7 +479,7 @@ export class SolanaController {
 
       signature = primarySignature; // Use the primary signature for further processing
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const [firstConfirm, secondConfirm, thirdConfirm, fourthConfirm] = await Promise.all([
         this.confirmTransaction(signature, this.connection),
