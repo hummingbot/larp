@@ -428,7 +428,6 @@ export class SolanaController {
     const blockhashAndContext = await this.connection.getLatestBlockhashAndContext('confirmed');
     const lastValidBlockHeight = blockhashAndContext.value.lastValidBlockHeight;
     const blockhash = blockhashAndContext.value.blockhash;
-    const minContextSlot = blockhashAndContext.context.slot;
 
     tx.lastValidBlockHeight = lastValidBlockHeight;
     tx.recentBlockhash = blockhash;
@@ -438,7 +437,6 @@ export class SolanaController {
       tx.serialize(),
       signers[0].publicKey.toBase58(),
       lastValidBlockHeight,
-      minContextSlot,
     );
 
     // Decrease priority fee multiplier if transaction is successful
@@ -451,7 +449,6 @@ export class SolanaController {
     rawTx: Buffer | Uint8Array | Array<number>,
     payerAddress: string,
     lastValidBlockHeight: number,
-    minContextSlot?: number,
   ): Promise<string> {
     let blockheight = await this.connection.getBlockHeight({ commitment: 'confirmed' });
     let signature: string;
@@ -461,13 +458,11 @@ export class SolanaController {
         this.connection.sendRawTransaction(rawTx, {
           skipPreflight: true,
           preflightCommitment: 'confirmed',
-          ...(minContextSlot !== undefined && { minContextSlot }),
           maxRetries: 0,
         }),
         this.secondConnection.sendRawTransaction(rawTx, {
           skipPreflight: true,
           preflightCommitment: 'confirmed',
-          ...(minContextSlot !== undefined && { minContextSlot }),
           maxRetries: 0,
         }),
       ]);
@@ -530,10 +525,10 @@ export class SolanaController {
           throw new Error('Transaction details are null');
         }
       } catch (error) {
-        if (attempt < 19) {
+        if (attempt < 10) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         } else {
-          // Return default values after 19 attempts
+          // Return default values after 10 attempts
           console.error(`Error fetching transaction details: ${error.message}`);
           return { balanceChange: 0, fee: 0 };
         }
@@ -595,7 +590,7 @@ export class SolanaController {
   }
 
   private increasePriorityFeeMultiplier(): void {
-    priorityFeeMultiplier += 5;
+    priorityFeeMultiplier += 3;
     console.debug(`[PRIORITY FEE] Increased priorityFeeMultiplier to: ${priorityFeeMultiplier}`);
   }
 
