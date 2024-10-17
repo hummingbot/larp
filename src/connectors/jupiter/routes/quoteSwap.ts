@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
-import { QuoteGetRequest, QuoteResponse } from "@jup-ag/api";
+import { QuoteGetRequest, QuoteResponse } from '@jup-ag/api';
 import { JupiterController } from '../jupiter.controller';
 import { SolanaController } from '../../solana/solana.controller';
 
@@ -15,7 +15,7 @@ export class GetSwapQuoteController extends JupiterController {
     amount: number,
     slippagePct?: number,
     onlyDirectRoutes: boolean = false,
-    asLegacyTransaction: boolean = false
+    asLegacyTransaction: boolean = false,
   ): Promise<QuoteResponse> {
     await this.loadJupiter();
 
@@ -24,24 +24,28 @@ export class GetSwapQuoteController extends JupiterController {
     const outputToken = await solanaController.getTokenBySymbol(outputTokenSymbol);
 
     if (!inputToken || !outputToken) {
+      console.error('Invalid token symbols');
       throw new Error('Invalid token symbols');
     }
 
     const slippageBps = slippagePct ? Math.round(slippagePct * 100) : 50;
+    const quoteAmount = Math.floor(amount * 10 ** inputToken.decimals);
 
     const params: QuoteGetRequest = {
       inputMint: inputToken.address,
       outputMint: outputToken.address,
-      amount: amount * (10 ** inputToken.decimals),
+      amount: quoteAmount,
       slippageBps,
       onlyDirectRoutes,
       asLegacyTransaction,
+      swapMode: 'ExactIn',
     };
 
     const quote = await this.jupiterQuoteApi.quoteGet(params);
 
     if (!quote) {
-      throw new Error("Unable to get quote");
+      console.error('Unable to get quote');
+      throw new Error('Unable to get quote');
     }
 
     return quote;
@@ -73,11 +77,18 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
           routePlan: Type.Array(Type.Object({})),
           contextSlot: Type.Number(),
           timeTaken: Type.Number(),
-        })
-      }
+        }),
+      },
     },
     handler: async (request, reply) => {
-      const { inputTokenSymbol, outputTokenSymbol, amount, slippagePct, onlyDirectRoutes, asLegacyTransaction } = request.query as {
+      const {
+        inputTokenSymbol,
+        outputTokenSymbol,
+        amount,
+        slippagePct,
+        onlyDirectRoutes,
+        asLegacyTransaction,
+      } = request.query as {
         inputTokenSymbol: string;
         outputTokenSymbol: string;
         amount: number;
@@ -85,9 +96,18 @@ export default function getSwapQuoteRoute(fastify: FastifyInstance, folderName: 
         onlyDirectRoutes?: boolean;
         asLegacyTransaction?: boolean;
       };
-      fastify.log.info(`Getting Jupiter swap quote for ${inputTokenSymbol} to ${outputTokenSymbol}`);
-      const quote = await controller.getQuote(inputTokenSymbol, outputTokenSymbol, amount, slippagePct, onlyDirectRoutes, asLegacyTransaction);
+      fastify.log.info(
+        `Getting Jupiter swap quote for ${inputTokenSymbol} to ${outputTokenSymbol}`,
+      );
+      const quote = await controller.getQuote(
+        inputTokenSymbol,
+        outputTokenSymbol,
+        amount,
+        slippagePct,
+        onlyDirectRoutes,
+        asLegacyTransaction,
+      );
       return quote;
-    }
+    },
   });
 }
