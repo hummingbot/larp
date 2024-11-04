@@ -92,6 +92,9 @@ export default function openPositionRoute(fastify: FastifyInstance, folderName: 
         return result;
       } catch (error) {
         fastify.log.error(`Error opening position: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to open position: ${error.message}` });
       }
     },

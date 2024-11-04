@@ -135,6 +135,9 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
         return result;
       } catch (error) {
         fastify.log.error(`Error executing swap: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to execute swap: ${error.message}` });
       }
     },

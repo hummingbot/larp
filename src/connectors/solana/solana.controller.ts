@@ -69,7 +69,7 @@ class ConnectionPool {
   private currentIndex: number = 0;
 
   constructor(urls: string[]) {
-    this.connections = urls.map(url => new Connection(url, { commitment: 'confirmed' }));
+    this.connections = urls.map((url) => new Connection(url, { commitment: 'confirmed' }));
   }
 
   public getNextConnection(): Connection {
@@ -99,12 +99,13 @@ export class SolanaController {
     // Parse comma-separated RPC URLs
     const rpcUrlsString = process.env.SOLANA_RPC_URLS;
     const rpcUrls: string[] = [];
-    
+
     if (rpcUrlsString) {
       // Split and trim URLs, filter out empty strings
-      const urls = rpcUrlsString.split(',')
-        .map(url => url.trim())
-        .filter(url => url !== '');
+      const urls = rpcUrlsString
+        .split(',')
+        .map((url) => url.trim())
+        .filter((url) => url !== '');
       rpcUrls.push(...urls);
     }
 
@@ -125,7 +126,7 @@ export class SolanaController {
     if (!SolanaController.solanaLogged && process.env.START_SERVER === 'true') {
       console.log(`Solana connector initialized:
         - Network: ${this.network}
-        - RPC URLs:\n${rpcUrls.map(url => `\t\t${url}`).join('\n')}
+        - RPC URLs:\n${rpcUrls.map((url) => `\t\t${url}`).join('\n')}
         - Wallet Public Key: ${this.keypair.publicKey.toBase58()}
         - Token List: ${TOKEN_LIST_FILE}
       `);
@@ -329,45 +330,59 @@ export class SolanaController {
     }
   }
 
-  public async confirmTransaction(signature: string, connection: Connection): Promise<boolean> {
+  public async confirmTransaction(
+    signature: string,
+    connection: Connection,
+    timeout: number = 3000,
+  ): Promise<boolean> {
     try {
-      const payload = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'getSignatureStatuses',
-        params: [
-          [signature],
-          {
-            searchTransactionHistory: true,
-          },
-        ],
-      };
+      const confirmationPromise = new Promise<boolean>(async (resolve, reject) => {
+        const payload = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getSignatureStatuses',
+          params: [
+            [signature],
+            {
+              searchTransactionHistory: true,
+            },
+          ],
+        };
 
-      const response = await fetch(connection.rpcEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        const response = await fetch(connection.rpcEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          reject(new Error(`HTTP error! status: ${response.status}`));
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.result && data.result.value && data.result.value[0]) {
+          const status: SignatureStatus = data.result.value[0];
+          if (status.err !== null) {
+            reject(new Error(`Transaction failed with error: ${JSON.stringify(status.err)}`));
+            return;
+          }
+          const isConfirmed =
+            status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized';
+          resolve(isConfirmed);
+        } else {
+          resolve(false);
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const timeoutPromise = new Promise<boolean>((_, reject) =>
+        setTimeout(() => reject(new Error('Confirmation timed out')), timeout),
+      );
 
-      const data = await response.json();
-
-      if (data.result && data.result.value && data.result.value[0]) {
-        const status: SignatureStatus = data.result.value[0];
-        if (status.err !== null) {
-          throw new Error(`Transaction failed with error: ${JSON.stringify(status.err)}`);
-        }
-        const isConfirmed =
-          status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized';
-        return isConfirmed;
-      }
-
-      return false;
+      return await Promise.race([confirmationPromise, timeoutPromise]);
     } catch (error) {
       console.error('Error confirming transaction:', error.message);
       throw new Error(`Failed to confirm transaction: ${error.message}`);
@@ -378,53 +393,67 @@ export class SolanaController {
     address: string,
     signature: string,
     connection: Connection,
+    timeout: number = 3000,
   ): Promise<boolean> {
     try {
-      const payload = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'getSignaturesForAddress',
-        params: [
-          address,
-          {
-            limit: 100, // Adjust the limit as needed
-            until: signature,
-          },
-        ],
-      };
+      const confirmationPromise = new Promise<boolean>(async (resolve, reject) => {
+        const payload = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'getSignaturesForAddress',
+          params: [
+            address,
+            {
+              limit: 100, // Adjust the limit as needed
+              until: signature,
+            },
+          ],
+        };
 
-      const response = await fetch(connection.rpcEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+        const response = await fetch(connection.rpcEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          reject(new Error(`HTTP error! status: ${response.status}`));
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.result) {
+          const transactionInfo = data.result.find((entry) => entry.signature === signature);
+
+          if (!transactionInfo) {
+            resolve(false);
+            return;
+          }
+
+          if (transactionInfo.err !== null) {
+            reject(
+              new Error(`Transaction failed with error: ${JSON.stringify(transactionInfo.err)}`),
+            );
+            return;
+          }
+
+          const isConfirmed =
+            transactionInfo.confirmationStatus === 'confirmed' ||
+            transactionInfo.confirmationStatus === 'finalized';
+          resolve(isConfirmed);
+        } else {
+          resolve(false);
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const timeoutPromise = new Promise<boolean>((_, reject) =>
+        setTimeout(() => reject(new Error('Confirmation timed out')), timeout),
+      );
 
-      const data = await response.json();
-
-      if (data.result) {
-        const transactionInfo = data.result.find((entry) => entry.signature === signature);
-
-        if (!transactionInfo) {
-          return false;
-        }
-
-        if (transactionInfo.err !== null) {
-          throw new Error(`Transaction failed with error: ${JSON.stringify(transactionInfo.err)}`);
-        }
-
-        const isConfirmed =
-          transactionInfo.confirmationStatus === 'confirmed' ||
-          transactionInfo.confirmationStatus === 'finalized';
-        return isConfirmed;
-      }
-
-      return false;
+      return await Promise.race([confirmationPromise, timeoutPromise]);
     } catch (error) {
       console.error('Error confirming transaction using signatures:', error.message);
       throw new Error(`Failed to confirm transaction using signatures: ${error.message}`);
@@ -432,7 +461,9 @@ export class SolanaController {
   }
 
   async sendAndConfirmTransaction(tx: Transaction, signers: Signer[] = []): Promise<string> {
-    const priorityFeesEstimate = await this.fetchEstimatePriorityFees(this.connectionPool.getNextConnection().rpcEndpoint);
+    const priorityFeesEstimate = await this.fetchEstimatePriorityFees(
+      this.connectionPool.getNextConnection().rpcEndpoint,
+    );
 
     const validFeeLevels = ['min', 'low', 'medium', 'high', 'veryHigh', 'unsafeMax'];
     const priorityFeeLevel = process.env.PRIORITY_FEE_LEVEL || 'medium';
@@ -448,7 +479,9 @@ export class SolanaController {
 
     tx.instructions.push(priorityFeeInstruction);
 
-    const blockhashAndContext = await this.connectionPool.getNextConnection().getLatestBlockhashAndContext('confirmed');
+    const blockhashAndContext = await this.connectionPool
+      .getNextConnection()
+      .getLatestBlockhashAndContext('confirmed');
     const lastValidBlockHeight = blockhashAndContext.value.lastValidBlockHeight;
     const blockhash = blockhashAndContext.value.blockhash;
 
@@ -473,23 +506,40 @@ export class SolanaController {
     payerAddress: string,
     lastValidBlockHeight: number,
   ): Promise<string> {
-    let blockheight = await this.connectionPool.getNextConnection().getBlockHeight({ commitment: 'confirmed' });
+    let blockheight = await this.connectionPool
+      .getNextConnection()
+      .getBlockHeight({ commitment: 'confirmed' });
+
     let signature: string;
+    let signatures: string[];
+    let confirmations: boolean[];
 
     while (blockheight <= lastValidBlockHeight + 50) {
-      // Send transaction to all connections in parallel
-      const signatures = await Promise.all(
-        this.connectionPool.getAllConnections().map(conn =>
+      const sendRawTransactionResults = await Promise.allSettled(
+        this.connectionPool.getAllConnections().map((conn) =>
           conn.sendRawTransaction(rawTx, {
             skipPreflight: true,
             preflightCommitment: 'confirmed',
             maxRetries: 0,
-          })
-        )
+          }),
+        ),
       );
 
+      const successfulResults = sendRawTransactionResults.filter(
+        (result) => result.status === 'fulfilled',
+      );
+
+      if (successfulResults.length > 0) {
+        // Map all successful results to get their values (signatures)
+        signatures = successfulResults.map((result) => result.value);
+      } else {
+        // All promises failed
+        console.error('All connections failed to send the transaction.');
+        throw new Error('All connections failed to send the transaction.');
+      }
+
       // Verify all signatures match
-      if (!signatures.every(sig => sig === signatures[0])) {
+      if (!signatures.every((sig) => sig === signatures[0])) {
         console.error('Signatures do not match across connections.');
         throw new Error('Signature mismatch between connections.');
       }
@@ -499,35 +549,51 @@ export class SolanaController {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Check confirmation across all connections
-      const confirmations = await Promise.all(
-        this.connectionPool.getAllConnections().flatMap(conn => [
-          this.confirmTransaction(signature, conn),
-          this.confirmTransactionByAddress(payerAddress, signature, conn),
-        ])
+      const confirmTransactionResults = await Promise.allSettled(
+        this.connectionPool
+          .getAllConnections()
+          .flatMap((conn) => [
+            this.confirmTransaction(signature, conn),
+            this.confirmTransactionByAddress(payerAddress, signature, conn),
+          ]),
       );
 
-      if (confirmations.some(confirmed => confirmed)) {
+      const successfulConfirmations = confirmTransactionResults.filter(
+        (result) => result.status === 'fulfilled',
+      );
+
+      const rejectedConfirmations = confirmTransactionResults.filter(
+        (result) => result.status === 'rejected',
+      );
+
+      rejectedConfirmations.forEach((result) => {
+        if (result.status === 'rejected' && result.reason.message.includes('InstructionError')) {
+          console.error(result.reason.message);
+          throw new Error(result.reason.message);
+        }
+      });
+
+      if (successfulConfirmations.length > 0) {
+        // Map all successful results to get their values (signatures)
+        confirmations = successfulConfirmations.map((result) => result.value);
+      } else {
+        // All promises failed
+        console.error('All connections failed to confirm the transaction.');
+        throw new Error('All connections failed to confirm the transaction.');
+      }
+
+      if (confirmations.some((confirmed) => confirmed)) {
         return signature;
       }
 
-      blockheight = await this.connectionPool.getNextConnection().getBlockHeight({ commitment: 'confirmed' });
+      blockheight = await this.connectionPool
+        .getNextConnection()
+        .getBlockHeight({ commitment: 'confirmed' });
     }
 
-    // Final confirmation check
-    const confirmations = await Promise.all(
-      this.connectionPool.getAllConnections().flatMap(conn => [
-        this.confirmTransaction(signature, conn),
-        this.confirmTransactionByAddress(payerAddress, signature, conn),
-      ])
-    );
-
-    if (!confirmations.some(confirmed => confirmed)) {
-      console.error('Transaction could not be confirmed within the valid block height range.');
-      this.increasePriorityFeeMultiplier();
-      throw new TransactionExpiredBlockheightExceededError(signature);
-    }
-
-    return signature;
+    console.error('Transaction could not be confirmed within the valid block height range.');
+    this.increasePriorityFeeMultiplier();
+    throw new TransactionExpiredBlockheightExceededError(signature);
   }
 
   async extractTokenBalanceChangeAndFee(

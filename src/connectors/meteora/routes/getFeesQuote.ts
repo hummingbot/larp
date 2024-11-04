@@ -117,6 +117,9 @@ export default function getFeesQuoteRoute(fastify: FastifyInstance, folderName: 
         return JSON.parse(result);
       } catch (error) {
         fastify.log.error(`Error getting fees quote: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to get fees quote: ${error.message}` });
       }
     },

@@ -13,6 +13,7 @@ class AddLiquidityController extends MeteoraController {
     baseTokenAmount: number,
     quoteTokenAmount: number,
     slippagePct?: number,
+    strategy: StrategyType = StrategyType.SpotImBalanced,
   ): Promise<{
     signature: string;
     tokenXAddedAmount: number;
@@ -40,7 +41,7 @@ class AddLiquidityController extends MeteoraController {
     }
 
     if (!matchingLbPosition || !matchingPositionInfo) {
-      console.error('Position not found');
+      console.error('Position not found for address:', positionAddress);
       throw new Error('Position not found');
     }
 
@@ -68,7 +69,7 @@ class AddLiquidityController extends MeteoraController {
       strategy: {
         maxBinId,
         minBinId,
-        strategyType: StrategyType.SpotImBalanced,
+        strategyType: strategy,
       },
       slippage: slippagePct ? slippagePct : MAX_ACTIVE_BIN_SLIPPAGE,
     });
@@ -103,12 +104,16 @@ export default function addLiquidityRoute(fastify: FastifyInstance, folderName: 
     schema: {
       tags: [folderName],
       description: 'Add liquidity to a Meteora position',
-      body: Type.Object({
-        positionAddress: Type.String({ default: '' }),
-        baseTokenAmount: Type.Number({ default: 1 }),
-        quoteTokenAmount: Type.Number({ default: 1 }),
-        slippagePct: Type.Optional(Type.Number({ default: 1 })),
-      }),
+      body: {
+        type: 'object',
+        properties: {
+          positionAddress: Type.String({ default: '' }),
+          baseTokenAmount: Type.Number({ default: 1 }),
+          quoteTokenAmount: Type.Number({ default: 1 }),
+          slippagePct: Type.Optional(Type.Number({ default: 1 })),
+          strategy: Type.Optional(Type.Number({ default: StrategyType.SpotImBalanced })),
+        },
+      },
       response: {
         200: Type.Object({
           signature: Type.String(),
@@ -119,12 +124,14 @@ export default function addLiquidityRoute(fastify: FastifyInstance, folderName: 
       },
     },
     handler: async (request, reply) => {
-      const { positionAddress, baseTokenAmount, quoteTokenAmount, slippagePct } = request.body as {
-        positionAddress: string;
-        baseTokenAmount: number;
-        quoteTokenAmount: number;
-        slippagePct?: number;
-      };
+      const { positionAddress, baseTokenAmount, quoteTokenAmount, slippagePct, strategy } =
+        request.body as {
+          positionAddress: string;
+          baseTokenAmount: number;
+          quoteTokenAmount: number;
+          slippagePct?: number;
+          strategy?: StrategyType;
+        };
       fastify.log.info(`Adding liquidity to Meteora position: ${positionAddress}`);
       try {
         const result = await controller.addLiquidity(
@@ -132,10 +139,14 @@ export default function addLiquidityRoute(fastify: FastifyInstance, folderName: 
           baseTokenAmount,
           quoteTokenAmount,
           slippagePct,
+          strategy,
         );
         return result;
       } catch (error) {
         fastify.log.error(`Error adding liquidity: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to add liquidity: ${error.message}` });
       }
     },

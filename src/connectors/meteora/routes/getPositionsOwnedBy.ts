@@ -116,6 +116,9 @@ export default function getPositionsOwnedByRoute(
         return positions;
       } catch (error) {
         fastify.log.error(`Error fetching positions: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to fetch positions: ${error.message}` });
       }
     },

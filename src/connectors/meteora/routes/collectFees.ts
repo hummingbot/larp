@@ -111,6 +111,9 @@ export default function collectFeesRoute(fastify: FastifyInstance, folderName: s
         return result;
       } catch (error) {
         fastify.log.error(`Error collecting fees: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to collect fees: ${error.message}` });
       }
     },

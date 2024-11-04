@@ -56,6 +56,9 @@ export default function getActiveBinRoute(fastify: FastifyInstance, folderName: 
         return quote;
       } catch (error) {
         fastify.log.error(`Error getting active bin: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to get active bin: ${error.message}` });
       }
     },

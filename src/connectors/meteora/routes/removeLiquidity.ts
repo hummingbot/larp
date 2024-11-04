@@ -130,6 +130,9 @@ export default function removeLiquidityRoute(fastify: FastifyInstance, folderNam
         return reply.send(result);
       } catch (error) {
         fastify.log.error(`Error removing liquidity: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         return reply.status(500).send({ error: `Failed to remove liquidity: ${error.message}` });
       }
     },

@@ -30,6 +30,7 @@ class ClosePositionController extends MeteoraController {
     }
 
     if (!matchingLbPosition || !matchingPositionInfo) {
+      console.error('Position not found for address:', positionAddress);
       throw new Error('Position not found');
     }
 
@@ -86,6 +87,9 @@ export default function closePositionRoute(fastify: FastifyInstance, folderName:
         return result;
       } catch (error) {
         fastify.log.error(`Error closing position: ${error.message}`);
+        if (error.stack) {
+          fastify.log.error(`Stack trace: ${error.stack}`);
+        }
         reply.status(500).send({ error: `Failed to close position: ${error.message}` });
       }
     },
