@@ -55,7 +55,7 @@ export const LbPairAccountResponse = Type.Object({
 
 class GetLbPairsController extends MeteoraController {
     async getLbPairs(): Promise<LbPairAccount[]> {
-        const allPairs = await DLMM.getLbPairs(this.connection);
+        const allPairs = await DLMM.getLbPairs(this.connectionPool.getNextConnection());
         return allPairs
     }
 }

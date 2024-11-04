@@ -56,7 +56,7 @@ export class ExecuteSwapController extends JupiterController {
 
     transaction.sign([this.wallet.payer]);
 
-    const { value: simulatedTransactionResponse } = await this.connection.simulateTransaction(
+    const { value: simulatedTransactionResponse } = await this.connectionPool.getNextConnection().simulateTransaction(
       transaction,
       {
         replaceRecentBlockhash: true,

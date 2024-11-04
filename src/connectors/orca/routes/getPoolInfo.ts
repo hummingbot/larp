@@ -39,8 +39,10 @@ class GetPoolInfoController extends OrcaController {
     const tokenVaultA = pool.getTokenVaultAInfo();
     const tokenVaultB = pool.getTokenVaultBInfo();
 
-    const tokenAAmount = await this.connection.getTokenAccountBalance(tokenVaultA.address);
-    const tokenBAmount = await this.connection.getTokenAccountBalance(tokenVaultB.address);
+    const connection = this.connectionPool.getNextConnection();
+
+    const tokenAAmount = await connection.getTokenAccountBalance(tokenVaultA.address);
+    const tokenBAmount = await connection.getTokenAccountBalance(tokenVaultB.address);
 
     // Look up token symbols using SolanaController
     const tokenAInfo = await this.solanaController.getTokenByAddress(tokenA.address.toString());

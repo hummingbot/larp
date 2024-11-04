@@ -36,7 +36,7 @@ export class GetBalanceController extends SolanaController {
     const balances: BalanceResponse = [];
 
     if (!upperCaseSymbols || upperCaseSymbols.includes("SOL")) {
-      const solBalance = await this.connection.getBalance(publicKey);
+      const solBalance = await this.connectionPool.getNextConnection().getBalance(publicKey);
       balances.push({
         address: "11111111111111111111111111111111",
         symbol: "SOL",
@@ -54,7 +54,7 @@ export class GetBalanceController extends SolanaController {
     }, {});
 
     // Get all token accounts for the provided address
-    const accounts = await this.connection.getTokenAccountsByOwner(
+    const accounts = await this.connectionPool.getNextConnection().getTokenAccountsByOwner(
       publicKey, // Use the provided address
       { programId: TOKEN_PROGRAM_ID }
     );

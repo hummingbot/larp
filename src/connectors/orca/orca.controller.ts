@@ -14,7 +14,7 @@ export class OrcaController extends SolanaController {
   constructor() {
     super();
     const wallet = new Wallet(this.keypair);
-    const provider = new AnchorProvider(this.connection, wallet, {
+    const provider = new AnchorProvider(this.connectionPool.getNextConnection(), wallet, {
       commitment: "processed",
     });
 

@@ -64,10 +64,28 @@ export const BadRequestResponseSchema = Type.Object({
 
 export type SolanaNetworkType = 'mainnet-beta' | 'devnet';
 
+class ConnectionPool {
+  private connections: Connection[] = [];
+  private currentIndex: number = 0;
+
+  constructor(urls: string[]) {
+    this.connections = urls.map(url => new Connection(url, { commitment: 'confirmed' }));
+  }
+
+  public getNextConnection(): Connection {
+    const connection = this.connections[this.currentIndex];
+    this.currentIndex = (this.currentIndex + 1) % this.connections.length;
+    return connection;
+  }
+
+  public getAllConnections(): Connection[] {
+    return this.connections;
+  }
+}
+
 export class SolanaController {
   protected network: string;
-  protected connection: Connection;
-  protected secondConnection: Connection;
+  protected connectionPool: ConnectionPool;
   protected keypair: Keypair | null = null;
   protected tokenList: any = null;
   private utl: Client;
@@ -77,21 +95,26 @@ export class SolanaController {
   constructor() {
     this.network = this.validateSolanaNetwork(process.env.SOLANA_NETWORK);
     config(); // Load environment variables
-    const rpcUrlOverride = process.env.SOLANA_RPC_URL_OVERRIDE;
-    const rpcUrl =
-      rpcUrlOverride && rpcUrlOverride.trim() !== ''
-        ? rpcUrlOverride
-        : clusterApiUrl(this.network as Cluster);
 
-    const rpcSecondUrlOverride =
-      process.env.SOLANA_RPC_SECOND_URL_OVERRIDE || process.env.SOLANA_RPC_URL_OVERRIDE;
-    const rpcSecondUrl =
-      rpcSecondUrlOverride && rpcSecondUrlOverride.trim() !== ''
-        ? rpcSecondUrlOverride
-        : clusterApiUrl(this.network as Cluster);
+    // Parse comma-separated RPC URLs
+    const rpcUrlsString = process.env.SOLANA_RPC_URLS;
+    const rpcUrls: string[] = [];
+    
+    if (rpcUrlsString) {
+      // Split and trim URLs, filter out empty strings
+      const urls = rpcUrlsString.split(',')
+        .map(url => url.trim())
+        .filter(url => url !== '');
+      rpcUrls.push(...urls);
+    }
 
-    this.connection = new Connection(rpcUrl, { commitment: 'confirmed' });
-    this.secondConnection = new Connection(rpcSecondUrl, { commitment: 'confirmed' });
+    // Add default cluster URL if no URLs provided
+    if (rpcUrls.length === 0) {
+      rpcUrls.push(clusterApiUrl(this.network as Cluster));
+    }
+
+    // Initialize connection pool
+    this.connectionPool = new ConnectionPool(rpcUrls);
 
     this.loadWallet();
     this.loadTokenList();
@@ -102,7 +125,7 @@ export class SolanaController {
     if (!SolanaController.solanaLogged && process.env.START_SERVER === 'true') {
       console.log(`Solana connector initialized:
         - Network: ${this.network}
-        - RPC URL: ${rpcUrl}
+        - RPC URLs:\n${rpcUrls.map(url => `\t\t${url}`).join('\n')}
         - Wallet Public Key: ${this.keypair.publicKey.toBase58()}
         - Token List: ${TOKEN_LIST_FILE}
       `);
@@ -158,7 +181,7 @@ export class SolanaController {
     const config = new UtlConfig({
       chainId: this.network === 'devnet' ? 103 : 101,
       timeout: 2000,
-      connection: this.connection,
+      connection: this.connectionPool.getNextConnection(), // Use connection from pool
       apiUrl: 'https://token-list-api.solana.cloud',
       cdnUrl: 'https://cdn.jsdelivr.net/gh/solflare-wallet/token-list/solana-tokenlist.json',
     });
@@ -409,7 +432,7 @@ export class SolanaController {
   }
 
   async sendAndConfirmTransaction(tx: Transaction, signers: Signer[] = []): Promise<string> {
-    const priorityFeesEstimate = await this.fetchEstimatePriorityFees(this.connection.rpcEndpoint);
+    const priorityFeesEstimate = await this.fetchEstimatePriorityFees(this.connectionPool.getNextConnection().rpcEndpoint);
 
     const validFeeLevels = ['min', 'low', 'medium', 'high', 'veryHigh', 'unsafeMax'];
     const priorityFeeLevel = process.env.PRIORITY_FEE_LEVEL || 'medium';
@@ -425,7 +448,7 @@ export class SolanaController {
 
     tx.instructions.push(priorityFeeInstruction);
 
-    const blockhashAndContext = await this.connection.getLatestBlockhashAndContext('confirmed');
+    const blockhashAndContext = await this.connectionPool.getNextConnection().getLatestBlockhashAndContext('confirmed');
     const lastValidBlockHeight = blockhashAndContext.value.lastValidBlockHeight;
     const blockhash = blockhashAndContext.value.blockhash;
 
@@ -450,55 +473,55 @@ export class SolanaController {
     payerAddress: string,
     lastValidBlockHeight: number,
   ): Promise<string> {
-    let blockheight = await this.connection.getBlockHeight({ commitment: 'confirmed' });
+    let blockheight = await this.connectionPool.getNextConnection().getBlockHeight({ commitment: 'confirmed' });
     let signature: string;
 
     while (blockheight <= lastValidBlockHeight + 50) {
-      const [primarySignature, secondarySignature] = await Promise.all([
-        this.connection.sendRawTransaction(rawTx, {
-          skipPreflight: true,
-          preflightCommitment: 'confirmed',
-          maxRetries: 0,
-        }),
-        this.secondConnection.sendRawTransaction(rawTx, {
-          skipPreflight: true,
-          preflightCommitment: 'confirmed',
-          maxRetries: 0,
-        }),
-      ]);
+      // Send transaction to all connections in parallel
+      const signatures = await Promise.all(
+        this.connectionPool.getAllConnections().map(conn =>
+          conn.sendRawTransaction(rawTx, {
+            skipPreflight: true,
+            preflightCommitment: 'confirmed',
+            maxRetries: 0,
+          })
+        )
+      );
 
-      if (primarySignature !== secondarySignature) {
-        console.error('Primary and secondary signatures do not match.');
-        throw new Error('Signature mismatch between primary and secondary connections.');
+      // Verify all signatures match
+      if (!signatures.every(sig => sig === signatures[0])) {
+        console.error('Signatures do not match across connections.');
+        throw new Error('Signature mismatch between connections.');
       }
 
-      signature = primarySignature; // Use the primary signature for further processing
+      signature = signatures[0];
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const [firstConfirm, secondConfirm, thirdConfirm, fourthConfirm] = await Promise.all([
-        this.confirmTransaction(signature, this.connection),
-        this.confirmTransactionByAddress(payerAddress, signature, this.connection),
-        this.confirmTransaction(signature, this.secondConnection),
-        this.confirmTransactionByAddress(payerAddress, signature, this.secondConnection),
-      ]);
+      // Check confirmation across all connections
+      const confirmations = await Promise.all(
+        this.connectionPool.getAllConnections().flatMap(conn => [
+          this.confirmTransaction(signature, conn),
+          this.confirmTransactionByAddress(payerAddress, signature, conn),
+        ])
+      );
 
-      if (firstConfirm || secondConfirm || thirdConfirm || fourthConfirm) {
+      if (confirmations.some(confirmed => confirmed)) {
         return signature;
       }
 
-      blockheight = await this.connection.getBlockHeight({ commitment: 'confirmed' });
+      blockheight = await this.connectionPool.getNextConnection().getBlockHeight({ commitment: 'confirmed' });
     }
 
-    // Check if the transaction has been confirmed after exiting the loop
-    const [firstConfirm, secondConfirm, thirdConfirm, fourthConfirm] = await Promise.all([
-      this.confirmTransaction(signature, this.connection),
-      this.confirmTransactionByAddress(payerAddress, signature, this.connection),
-      this.confirmTransaction(signature, this.secondConnection),
-      this.confirmTransactionByAddress(payerAddress, signature, this.secondConnection),
-    ]);
+    // Final confirmation check
+    const confirmations = await Promise.all(
+      this.connectionPool.getAllConnections().flatMap(conn => [
+        this.confirmTransaction(signature, conn),
+        this.confirmTransactionByAddress(payerAddress, signature, conn),
+      ])
+    );
 
-    if (!(firstConfirm || secondConfirm || thirdConfirm || fourthConfirm)) {
+    if (!confirmations.some(confirmed => confirmed)) {
       console.error('Transaction could not be confirmed within the valid block height range.');
       this.increasePriorityFeeMultiplier();
       throw new TransactionExpiredBlockheightExceededError(signature);
@@ -515,7 +538,7 @@ export class SolanaController {
     let txDetails;
     for (let attempt = 0; attempt < 20; attempt++) {
       try {
-        txDetails = await this.connection.getParsedTransaction(signature, {
+        txDetails = await this.connectionPool.getNextConnection().getParsedTransaction(signature, {
           maxSupportedTransactionVersion: 0,
         });
 
@@ -559,7 +582,7 @@ export class SolanaController {
     let txDetails;
     for (let attempt = 0; attempt < 20; attempt++) {
       try {
-        txDetails = await this.connection.getParsedTransaction(signature, {
+        txDetails = await this.connectionPool.getNextConnection().getParsedTransaction(signature, {
           maxSupportedTransactionVersion: 0,
         });
 

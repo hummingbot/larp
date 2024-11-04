@@ -16,7 +16,7 @@ export class RaydiumController extends SolanaController {
       if (!this.raydium) {
         this.raydium = await Raydium.load({
           owner: this.keypair,
-          connection: this.connection,
+          connection: this.connectionPool.getNextConnection(),
           cluster: this.cluster,
           disableFeatureCheck: true,
           disableLoadToken: true,

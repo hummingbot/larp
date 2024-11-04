@@ -23,7 +23,7 @@ class GetFeesQuoteController extends MeteoraController {
   async getFeesQuote(positionAddress: string): Promise<string> {
     // Find all positions by users
     const allPositions = await DLMM.getAllLbPairPositionsByUser(
-      this.connection,
+      this.connectionPool.getNextConnection(),
       this.keypair.publicKey,
     );
 

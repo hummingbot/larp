@@ -12,7 +12,7 @@ class CollectFeesController extends MeteoraController {
   }> {
     // Find all positions by users
     const allPositions = await DLMM.getAllLbPairPositionsByUser(
-      this.connection,
+      this.connectionPool.getNextConnection(),
       this.keypair.publicKey,
     );
 

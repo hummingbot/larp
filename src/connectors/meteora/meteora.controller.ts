@@ -20,7 +20,7 @@ export class MeteoraController extends SolanaController {
     }
 
     // Create a promise for the DLMM instance and store it in the promises map
-    const dlmmPoolPromise = DLMM.create(this.connection, new PublicKey(poolAddress), {
+    const dlmmPoolPromise = DLMM.create(this.connectionPool.getNextConnection(), new PublicKey(poolAddress), {
       cluster: this.network as Cluster,
     }).then((dlmmPool) => {
       dlmmPools.set(poolAddress, dlmmPool); // Store the actual DLMM instance
