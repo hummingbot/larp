@@ -18,6 +18,22 @@ import { TokenInfoResponse } from './routes/listTokens';
 import { TypeCompiler } from '@sinclair/typebox/compiler';
 import { config } from 'dotenv';
 
+// Add accounts from https://triton.one/solana-prioritization-fees/ to track general fees
+const PRIORITY_FEE_ACCOUNTS = [
+  '4qGj88CX3McdTXEviEaqeP2pnZJxRTsZFWyU3Mrnbku4',
+  '2oLNTQKRb4a2117kFi6BYTUDu3RPrMVAHFhCfPKMosxX',
+  'xKUz6fZ79SXnjGYaYhhYTYQBoRUBoCyuDMkBa1tL3zU',
+  'GASeo1wEK3Rwep6fsAt212Jw9zAYguDY5qUwTnyZ4RH',
+  'B8emFMG91JJsBELV4XVkTNe3YTs85x4nCqub7dRZUY1p',
+  'DteH7aNKykAG2b2KQo7DD9XvLBfNgAuf2ixj5HC7ppTk',
+  '5HngGmYzvSuh3XyU11brHDpMTHXQQRQQT4udGFtQSjgR',
+  'GD37bnQdGkDsjNqnVGr9qWTnQJSKMHbsiXX9tXLMUcaL',
+  '4po3YMfioHkNP4mL4N46UWJvBoQDS2HFjzGm1ifrUWuZ',
+  '5veMSa4ks66zydSaKSPMhV7H2eF88HvuKDArScNH9jaG',
+];
+
+const GET_SIGNATURES_FOR_ADDRESS_LIMIT = 100;
+
 interface PriorityFeeRequestPayload {
   method: string;
   params: string[][];
@@ -259,19 +275,7 @@ export class SolanaController {
 
       // Only include params that are defined
       const params: string[][] = [];
-      // Add accounts from https://triton.one/solana-prioritization-fees/ to track general fees
-      params.push([
-        '4qGj88CX3McdTXEviEaqeP2pnZJxRTsZFWyU3Mrnbku4',
-        '2oLNTQKRb4a2117kFi6BYTUDu3RPrMVAHFhCfPKMosxX',
-        'xKUz6fZ79SXnjGYaYhhYTYQBoRUBoCyuDMkBa1tL3zU',
-        'GASeo1wEK3rWwep6fsAt212Jw9zAYguDY5qUwTnyZ4RH',
-        'B8emFMG91JJsBELV4XVkTNe3YTs85x4nCqub7dRZUY1p',
-        'DteH7aNKykAG2b2KQo7DD9XvLBfNgAuf2ixj5HC7ppTk',
-        '5HngGmYzvSuh3XyU11brHDpMTHXQQRQQT4udGFtQSjgR',
-        'GD37bnQdGkDsjNqnVGr9qWTnQJSKMHbsiXX9tXLMUcaL',
-        '4po3YMfioHkNP4mL4N46UWJvBoQDS2HFjzGm1ifrUWuZ',
-        '5veMSa4ks66zydSaKSPMhV7H2eF88HvuKDArScNH9jaG',
-      ]);
+      params.push(PRIORITY_FEE_ACCOUNTS);
       const payload: PriorityFeeRequestPayload = {
         method: 'getRecentPrioritizationFees',
         params: params,
@@ -404,7 +408,7 @@ export class SolanaController {
           params: [
             address,
             {
-              limit: 100, // Adjust the limit as needed
+              limit: GET_SIGNATURES_FOR_ADDRESS_LIMIT, // Adjust the limit as needed
               until: signature,
             },
           ],
@@ -471,7 +475,7 @@ export class SolanaController {
     // Ensure the priorityFeeLevel is valid, otherwise default to 'high'
     const selectedPriorityFee = validFeeLevels.includes(priorityFeeLevel)
       ? priorityFeesEstimate[priorityFeeLevel]
-      : priorityFeesEstimate.high;
+      : priorityFeesEstimate.medium;
 
     const priorityFeeInstruction = ComputeBudgetProgram.setComputeUnitPrice({
       microLamports: selectedPriorityFee * Math.max(priorityFeeMultiplier, 1),

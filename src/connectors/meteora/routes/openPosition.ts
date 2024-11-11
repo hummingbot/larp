@@ -5,8 +5,6 @@ import { Type } from '@sinclair/typebox';
 
 class OpenPositionController extends MeteoraController {
   async openPosition(
-    baseSymbol: string,
-    quoteSymbol: string,
     lowerPrice: number,
     upperPrice: number,
     poolAddress: string,
@@ -57,8 +55,6 @@ export default function openPositionRoute(fastify: FastifyInstance, folderName: 
       tags: [folderName],
       description: 'Open a new Meteora position',
       body: Type.Object({
-        baseSymbol: Type.String({ default: 'SOL' }),
-        quoteSymbol: Type.String({ default: 'USDC' }),
         lowerPrice: Type.Number({ default: 120 }),
         upperPrice: Type.Number({ default: 130 }),
         poolAddress: Type.String({ default: '5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6' }),
@@ -73,22 +69,14 @@ export default function openPositionRoute(fastify: FastifyInstance, folderName: 
       },
     },
     handler: async (request, reply) => {
-      const { baseSymbol, quoteSymbol, lowerPrice, upperPrice, poolAddress } = request.body as {
-        baseSymbol: string;
-        quoteSymbol: string;
+      const { lowerPrice, upperPrice, poolAddress } = request.body as {
         lowerPrice: number;
         upperPrice: number;
         poolAddress: string;
       };
       try {
-        fastify.log.info(`Opening new Meteora position: ${baseSymbol}/${quoteSymbol}`);
-        const result = await controller.openPosition(
-          baseSymbol,
-          quoteSymbol,
-          lowerPrice,
-          upperPrice,
-          poolAddress,
-        );
+        fastify.log.info(`Opening new Meteora position for pool ${poolAddress}`);
+        const result = await controller.openPosition(lowerPrice, upperPrice, poolAddress);
         return result;
       } catch (error) {
         fastify.log.error(`Error opening position: ${error.message}`);
