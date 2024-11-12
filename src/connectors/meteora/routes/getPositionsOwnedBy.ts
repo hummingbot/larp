@@ -12,10 +12,8 @@ interface PositionsOwnedByResponse {
 }
 
 class PositionsOwnedController extends MeteoraController {
-  private convertToDecimal(value: any, decimals?: number): string {
-    return decimals !== undefined
-      ? DecimalUtil.adjustDecimals(new Decimal(value.toString()), decimals).toString()
-      : DecimalUtil.fromBN(value).toString();
+  private convertDecimals(value: any, decimals: number): string {
+    return DecimalUtil.adjustDecimals(new Decimal(value.toString()), decimals).toString();
   }
 
   async getPositions(address?: string, poolAddress?: string): Promise<PositionsOwnedByResponse> {
@@ -33,8 +31,8 @@ class PositionsOwnedController extends MeteoraController {
 
       const adjustedActiveBin = {
         ...activeBin,
-        xAmount: this.convertToDecimal(activeBin.xAmount, dlmmPool.tokenX.decimal) as any,
-        yAmount: this.convertToDecimal(activeBin.yAmount, dlmmPool.tokenY.decimal) as any,
+        xAmount: this.convertDecimals(activeBin.xAmount, dlmmPool.tokenX.decimal) as any,
+        yAmount: this.convertDecimals(activeBin.yAmount, dlmmPool.tokenY.decimal) as any,
       };
 
       const adjustedUserPositions = userPositions.map((position) => {
@@ -48,18 +46,18 @@ class PositionsOwnedController extends MeteoraController {
             ...positionData,
             positionBinData: positionData.positionBinData.map((binData) => ({
               ...binData,
-              binXAmount: this.convertToDecimal(binData.binXAmount, tokenXDecimals),
-              binYAmount: this.convertToDecimal(binData.binYAmount, tokenYDecimals),
-              positionXAmount: this.convertToDecimal(binData.positionXAmount, tokenXDecimals),
-              positionYAmount: this.convertToDecimal(binData.positionYAmount, tokenYDecimals),
+              binXAmount: this.convertDecimals(binData.binXAmount, tokenXDecimals),
+              binYAmount: this.convertDecimals(binData.binYAmount, tokenYDecimals),
+              positionXAmount: this.convertDecimals(binData.positionXAmount, tokenXDecimals),
+              positionYAmount: this.convertDecimals(binData.positionYAmount, tokenYDecimals),
             })),
-            totalXAmount: this.convertToDecimal(positionData.totalXAmount, tokenXDecimals),
-            totalYAmount: this.convertToDecimal(positionData.totalYAmount, tokenYDecimals),
-            feeX: this.convertToDecimal(positionData.feeX, tokenXDecimals),
-            feeY: this.convertToDecimal(positionData.feeY, tokenYDecimals),
-            rewardOne: this.convertToDecimal(positionData.rewardOne, tokenXDecimals),
-            rewardTwo: this.convertToDecimal(positionData.rewardTwo, tokenYDecimals),
-            lastUpdatedAt: this.convertToDecimal(positionData.lastUpdatedAt),
+            totalXAmount: this.convertDecimals(positionData.totalXAmount, tokenXDecimals),
+            totalYAmount: this.convertDecimals(positionData.totalYAmount, tokenYDecimals),
+            feeX: this.convertDecimals(positionData.feeX, tokenXDecimals),
+            feeY: this.convertDecimals(positionData.feeY, tokenYDecimals),
+            rewardOne: this.convertDecimals(positionData.rewardOne, tokenXDecimals),
+            rewardTwo: this.convertDecimals(positionData.rewardTwo, tokenYDecimals),
+            lastUpdatedAt: DecimalUtil.fromBN(positionData.lastUpdatedAt).toString(),
           },
         };
       });
