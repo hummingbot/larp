@@ -12,6 +12,12 @@ interface PositionsOwnedByResponse {
 }
 
 class PositionsOwnedController extends MeteoraController {
+  private convertToDecimal(value: any, decimals?: number): string {
+    return decimals !== undefined
+      ? DecimalUtil.adjustDecimals(new Decimal(value.toString()), decimals).toString()
+      : DecimalUtil.fromBN(value).toString();
+  }
+
   async getPositions(address?: string, poolAddress?: string): Promise<PositionsOwnedByResponse> {
     if (!poolAddress) {
       throw new Error('Pool address is required');
@@ -25,58 +31,41 @@ class PositionsOwnedController extends MeteoraController {
 
       const { activeBin, userPositions } = await dlmmPool.getPositionsByUserAndLbPair(publicKey);
 
+      const adjustedActiveBin = {
+        ...activeBin,
+        xAmount: this.convertToDecimal(activeBin.xAmount, dlmmPool.tokenX.decimal) as any,
+        yAmount: this.convertToDecimal(activeBin.yAmount, dlmmPool.tokenY.decimal) as any,
+      };
+
       const adjustedUserPositions = userPositions.map((position) => {
-        const adjustedTotalXAmount = DecimalUtil.adjustDecimals(
-          new Decimal(position.positionData.totalXAmount.toString()),
-          dlmmPool.tokenX.decimal,
-        ).toString();
-
-        const adjustedTotalYAmount = DecimalUtil.adjustDecimals(
-          new Decimal(position.positionData.totalYAmount.toString()),
-          dlmmPool.tokenY.decimal,
-        ).toString();
-
-        const adjustedFeeX = DecimalUtil.fromBN(
-          position.positionData.feeX,
-          dlmmPool.tokenX.decimal,
-        ).toString();
-
-        const adjustedFeeY = DecimalUtil.fromBN(
-          position.positionData.feeY,
-          dlmmPool.tokenY.decimal,
-        ).toString();
-
-        const adjustlastUpdatedAt = DecimalUtil.fromBN(
-          position.positionData.lastUpdatedAt,
-        ).toString();
-
-        const adjustedRewardOne = DecimalUtil.fromBN(
-          position.positionData.rewardOne,
-          dlmmPool.tokenX.decimal,
-        ).toString();
-
-        const adjustedRewardTwo = DecimalUtil.fromBN(
-          position.positionData.rewardTwo,
-          dlmmPool.tokenY.decimal,
-        ).toString();
+        const { positionData } = position;
+        const tokenXDecimals = dlmmPool.tokenX.decimal;
+        const tokenYDecimals = dlmmPool.tokenY.decimal;
 
         return {
           ...position,
           positionData: {
-            ...position.positionData,
-            totalXAmount: adjustedTotalXAmount,
-            totalYAmount: adjustedTotalYAmount,
-            feeX: adjustedFeeX,
-            feeY: adjustedFeeY,
-            rewardOne: adjustedRewardOne,
-            rewardTwo: adjustedRewardTwo,
-            lastUpdatedAt: adjustlastUpdatedAt,
+            ...positionData,
+            positionBinData: positionData.positionBinData.map((binData) => ({
+              ...binData,
+              binXAmount: this.convertToDecimal(binData.binXAmount, tokenXDecimals),
+              binYAmount: this.convertToDecimal(binData.binYAmount, tokenYDecimals),
+              positionXAmount: this.convertToDecimal(binData.positionXAmount, tokenXDecimals),
+              positionYAmount: this.convertToDecimal(binData.positionYAmount, tokenYDecimals),
+            })),
+            totalXAmount: this.convertToDecimal(positionData.totalXAmount, tokenXDecimals),
+            totalYAmount: this.convertToDecimal(positionData.totalYAmount, tokenYDecimals),
+            feeX: this.convertToDecimal(positionData.feeX, tokenXDecimals),
+            feeY: this.convertToDecimal(positionData.feeY, tokenYDecimals),
+            rewardOne: this.convertToDecimal(positionData.rewardOne, tokenXDecimals),
+            rewardTwo: this.convertToDecimal(positionData.rewardTwo, tokenYDecimals),
+            lastUpdatedAt: this.convertToDecimal(positionData.lastUpdatedAt),
           },
         };
       });
 
       return {
-        activeBin,
+        activeBin: adjustedActiveBin,
         userPositions: adjustedUserPositions,
       };
     } catch (error) {
