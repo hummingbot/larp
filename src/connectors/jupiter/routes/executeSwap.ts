@@ -1,12 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { Type } from '@sinclair/typebox';
-import { Keypair, VersionedTransaction } from "@solana/web3.js";
-import { QuoteResponse, SwapResponse } from "@jup-ag/api";
-import { Wallet } from "@coral-xyz/anchor";
+import { VersionedTransaction } from '@solana/web3.js';
+import { QuoteResponse, SwapResponse } from '@jup-ag/api';
+import { Wallet } from '@coral-xyz/anchor';
 import { JupiterController } from '../jupiter.controller';
-import { transactionSenderAndConfirmationWaiter } from "../../../utils/transactionSender";
-import { getSignature } from "../../../utils/getSignature";
 import { GetSwapQuoteController } from './quoteSwap';
+import { priorityFeeMultiplier } from '../../solana/solana.controller';
 
 export class ExecuteSwapController extends JupiterController {
   constructor() {
@@ -19,7 +18,9 @@ export class ExecuteSwapController extends JupiterController {
         quoteResponse: quote,
         userPublicKey: wallet.publicKey.toBase58(),
         dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: "auto",
+        prioritizationFeeLamports: {
+          autoMultiplier: Math.max(priorityFeeMultiplier, 3),
+        },
       },
     });
     return swapObj;
@@ -29,57 +30,86 @@ export class ExecuteSwapController extends JupiterController {
     inputTokenSymbol: string,
     outputTokenSymbol: string,
     amount: number,
-    slippagePct?: number
-  ): Promise<{ signature: string; transactionResponse: any }> {
+    slippagePct?: number,
+  ): Promise<{
+    signature: string;
+    totalInputSwapped: number;
+    totalOutputSwapped: number;
+    fee: number;
+  }> {
     await this.loadJupiter();
-    
+
     const quoteController = new GetSwapQuoteController();
-    const quote = await quoteController.getQuote(inputTokenSymbol, outputTokenSymbol, amount, slippagePct);
-    
-    console.log("Wallet:", this.wallet.publicKey.toBase58());
+    const quote = await quoteController.getQuote(
+      inputTokenSymbol,
+      outputTokenSymbol,
+      amount,
+      slippagePct,
+    );
+
+    console.log('Wallet:', this.wallet.publicKey.toBase58());
 
     const swapObj = await this.getSwapObj(this.wallet, quote);
 
-    const swapTransactionBuf = Buffer.from(swapObj.swapTransaction, "base64");
-    var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+    const swapTransactionBuf = Buffer.from(swapObj.swapTransaction, 'base64');
+    const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
     transaction.sign([this.wallet.payer]);
-    const signature = getSignature(transaction);
 
-    const { value: simulatedTransactionResponse } =
-      await this.connection.simulateTransaction(transaction, {
+    const { value: simulatedTransactionResponse } = await this.connectionPool.getNextConnection().simulateTransaction(
+      transaction,
+      {
         replaceRecentBlockhash: true,
-        commitment: "confirmed",
-      });
+        commitment: 'confirmed',
+      },
+    );
     const { err, logs } = simulatedTransactionResponse;
 
     if (err) {
-      console.error("Simulation Error:");
+      console.error('Simulation Error:');
       console.error({ err, logs });
-      throw new Error("Transaction simulation failed");
+      throw new Error('Transaction simulation failed');
     }
 
     const serializedTransaction = Buffer.from(transaction.serialize());
-    const blockhash = transaction.message.recentBlockhash;
-
-    const transactionResponse = await transactionSenderAndConfirmationWaiter({
-      connection: this.connection,
+    const signature = await this.sendAndConfirmRawTransaction(
       serializedTransaction,
-      blockhashWithExpiryBlockHeight: {
-        blockhash,
-        lastValidBlockHeight: swapObj.lastValidBlockHeight,
-      },
-    });
+      this.wallet.payer.publicKey.toBase58(),
+      swapObj.lastValidBlockHeight,
+    );
 
-    if (!transactionResponse) {
-      throw new Error("Transaction not confirmed");
+    let inputBalanceChange: number, outputBalanceChange: number, fee: number;
+
+    if (quote.inputMint === 'So11111111111111111111111111111111111111112') {
+      ({ balanceChange: inputBalanceChange, fee } = await this.extractAccountBalanceChangeAndFee(
+        signature,
+        0,
+      ));
+    } else {
+      ({ balanceChange: inputBalanceChange, fee } = await this.extractTokenBalanceChangeAndFee(
+        signature,
+        quote.inputMint,
+        this.keypair.publicKey.toBase58(),
+      ));
     }
 
-    if (transactionResponse.meta?.err) {
-      throw new Error(`Transaction error: ${JSON.stringify(transactionResponse.meta.err)}`);
+    if (quote.outputMint === 'So11111111111111111111111111111111111111112') {
+      ({ balanceChange: outputBalanceChange } = await this.extractAccountBalanceChangeAndFee(
+        signature,
+        0,
+      ));
+    } else {
+      ({ balanceChange: outputBalanceChange } = await this.extractTokenBalanceChangeAndFee(
+        signature,
+        quote.outputMint,
+        this.keypair.publicKey.toBase58(),
+      ));
     }
 
-    return { signature, transactionResponse };
+    const totalInputSwapped = Math.abs(inputBalanceChange);
+    const totalOutputSwapped = Math.abs(outputBalanceChange);
+
+    return { signature, totalInputSwapped, totalOutputSwapped, fee };
   }
 }
 
@@ -99,9 +129,11 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
       response: {
         200: Type.Object({
           signature: Type.String(),
-          transactionResponse: Type.Object({}),
-        })
-      }
+          totalInputSwapped: Type.Number(),
+          totalOutputSwapped: Type.Number(),
+          fee: Type.Number(),
+        }),
+      },
     },
     handler: async (request, reply) => {
       const { inputTokenSymbol, outputTokenSymbol, amount, slippagePct } = request.body as {
@@ -111,8 +143,13 @@ export default function executeSwapRoute(fastify: FastifyInstance, folderName: s
         slippagePct?: number;
       };
       fastify.log.info(`Executing Jupiter swap from ${inputTokenSymbol} to ${outputTokenSymbol}`);
-      const result = await controller.executeSwap(inputTokenSymbol, outputTokenSymbol, amount, slippagePct);
+      const result = await controller.executeSwap(
+        inputTokenSymbol,
+        outputTokenSymbol,
+        amount,
+        slippagePct,
+      );
       return result;
-    }
+    },
   });
 }
